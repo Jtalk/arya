@@ -1,0 +1,10 @@
+{author,"Dan Sahlin","dan@cslab.ericsson.se","981127"}.
+{name,"assoc"}.
+{vsn,{1,2}}.
+{summary,"Associative arrays"}.
+{keywords,["associative","arrays"]}.
+{needs,[]}.
+{abstract,"Associative arrays with operations for inserting, finding, deleting(including largest and smallest item), combining arrays, stepping through (forwards and backwards), converting to and from lists, map, fold (left and right). Most operations are O(lg n).\n"}.
+
+
+
