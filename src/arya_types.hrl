@@ -76,7 +76,7 @@
 					% pid, 		% = pid() | empty
 					address,		% = { address, port}
 					token,		% = binary()
-					url_len,	% = integer() > 0
+					url_len = 0,	% = integer() >= 0
 					url = [],	% = [ { integer() >= 0, binary()} ] 
 					data_len = 0,% = true | false
 					data 		% = [{ integer() >= 0, binary()}]

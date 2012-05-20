@@ -42,6 +42,7 @@
 %%% @doc Starts the Arya application with the supervision timings provided
 %%%
 start( _, Timing ) ->
+	error_logger:logfile( { open, "./log.txt"}),
 	random:seed(),
 	case arya_main_sup:start_link(Timing) of
 		ignore ->
@@ -58,6 +59,7 @@ start( _, Timing ) ->
 %%% @doc Stops the Arya application.
 %%%
 stop( _ ) ->
+	error_logger:logfile(close),
 	ok.
 	
 	

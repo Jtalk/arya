@@ -31,6 +31,8 @@
 -define( HEADER_SIZE, 12).
 %% Dns error header.
 -define( ERROR_HEADER, <<133, 2, 0, 0, 0, 0, 0, 0, 0, 0>> ).
+%% Token has been generated:
+-define( TOKEN, << "token=">>).
 %% Message has been processed: 
 -define( DONE, << "done">> ).
 %% Extra messages needed:
@@ -56,7 +58,9 @@
 -define( FIRST_ELEM, -1).
 -define( SEPARATOR, $,).
 
--export([ parse/1, postprocess/1, process/2, download/1]).
+-export([ parse/1, postprocess/1, process/2, download/1, send_back/2]).
+-export([ request/3]).
+
 	
 %%% -----------------------------------------------------------------------
 %%% This is the tier 1 and 2 Arya processors' special 
@@ -80,7 +84,7 @@ parse( Data) when is_record( Data, recv) ->
 	Flags = binary:part( Header, 2, 2),
 	1 = binary:decode_unsigned( 
 		binary:part( Header, 4, 2)), % whether questions count is 1
-	Question = binary:part( Data, byte_size(Data), -(byte_size(Data) - 12)),
+	Question = binary:part( Data#recv.data, byte_size(Data#recv.data), -(byte_size(Data#recv.data) - 12)),
 	{ ok, Url, Type} = parse_question( Question),
 	{ ok, 
 		#entry {
@@ -132,8 +136,17 @@ postprocess( Data) when is_record(Data, entry) ->
 		
 %%% @doc Puts a valid packet received to the downloader already run.
 decision( Token, Data) ->
-	{ ok, Pid} = arya_token_storage:get_pid( Token ),
+	{ ok, Pid} =	if Data#entry.type == ?INIT ->
+						arya_dl_sup:child( Token);
+					true->
+						case arya_token_storage:get_pid( Token ) of
+							Ok = { ok, _} -> Ok;
+							false -> arya_dl_sup:child(Token)
+						end
+					end,
 	case arya_dl:process( Pid, Data) of
+		registered ->
+			send_back( Data#entry.from, make_dns( Data, << ?TOKEN/binary, Token/binary>>));
 		ok -> 
 			send_back( Data#entry.from, make_dns( Data, ?DONE));
 		{ need, Need} ->
@@ -144,7 +157,7 @@ decision( Token, Data) ->
 		{ ready, Len} ->
 			send_back( 
 				Data#entry.from, 
-				make_dns( Data, << ?READY/binary, (io_lib:format("~p", [Len])) >> )
+				make_dns( Data, << ?READY/binary, (binary:list_to_bin(io_lib:format("~p", [Len])))/binary >> )
 			);
 		{ recv, Item} ->
 			send_back( 
@@ -152,16 +165,17 @@ decision( Token, Data) ->
 				make_dns( Data, << ?DATA/binary, Item/binary >>)
 			);
 		last -> 
-			arya_dl:download( Pid),
+			format("Last", {}),
 			send_back( 
 				Data#entry.from, 
 				make_dns( Data, ?DONE)
-			);
+			),
+			arya_dl:download( Pid);
 		{ fail, Reason} ->
 			% it's an attack and we should send no confirmation, just log it. Address will be logged 
 			% as a part of Data record.
-			format( "Fail in arya_processor:decision: ", { Reason, Data, Token});
-		{ exception, Error = { _Name, Data, _State}} -> 
+			format( "Fail in arya_processor:decision: ", { Reason, Token});
+		{ exception, Error } -> 
 			format( "Error in arya_processor:decision: ", Error),
 			send_back(
 				Data#entry.from,
@@ -174,9 +188,11 @@ decision( Token, Data) ->
 %%% @note Really just returns a random value now.
 %%%
 make_token( _Uid, _Pass) -> 
+	random:seed( now()),
 	{ ok, MaxTok} = application:get_env(max_token),
 	InToken = random:uniform( MaxTok),
-	binary:encode_unsigned( InToken).
+	format( "TOKEN: ", InToken),
+	binary:list_to_bin(io_lib:format( "~p", [InToken])).
 	
 %%% @doc Creates DNS packet from data specified.
 make_dns( Data, String) -> 
@@ -185,12 +201,16 @@ make_dns( Data, String) ->
 	Answer = << 16#c00c:16, (Data#entry.type):16, 1:16, 0:32, (Size + 1):16, Size, String/binary>>,
 	<< Header/binary, (Data#entry.question)/binary, Answer/binary >>.	
 	
+%%% @doc Converts need array to binary representation.
 need_to_bin( Need) ->
 	need_to_bin( Need, <<>> ).
+need_to_bin( [], <<>>) ->
+	<<>>;
 need_to_bin( [], Bin) ->
-	Bin;
+	binary:part( Bin, 0, byte_size( Bin) - 1);
 need_to_bin( [ Need | Rest], Bin) ->
-	need_to_bin( Rest, << Bin/binary, (io_lib:format( "~p", [Need])) >> ).
+	Number = io_lib:format( "~p,", [Need]),
+	need_to_bin( Rest, << Bin/binary, (binary:list_to_bin(Number))/binary >> ).
 	
 %% Sending to client routines ------------------------------------------------
 %%% @spec send_back( To, Packet) -> ok
@@ -232,83 +252,93 @@ send_back( To, Packet) ->
 %%%
 process( Data, State) when Data#entry.type == ?INIT ->
 	[ BinQuantity | _] = Data#entry.url,
-	Quantity = binary:decode_unsigned( BinQuantity), % no need in exception handling since 
-	{ reply, ok, State#state { 
+	{ Quantity, _} = string:to_integer( binary:bin_to_list( BinQuantity)), 
+	format( "REGISTRATION: ", { Quantity, Data#entry.from}),
+	{ reply, registered, State#state { 
 					url_len = Quantity, 
 					address = Data#entry.from
 				}
-	};  % future processing is not allowed without len
-process( Data, State) when 
-								Data#entry.type /= ?INIT,
-								State#state.url_len == undefined ->
+	};
+	% no need in exception handling since 	
+	% future processing is not allowed without len
+process( Data, State) when State#state.url_len == 0 ->
+	format( "URL_LEN: ", State#state.url_len),
 	{ reply, { fail, { index_quantity_undefined, Data, State}}, State};
 process( Data, State) when Data#entry.type == ?SEND ->
-	if Data#entry.from /= State#state.address ->
-		{ reply, { fail, { wrong_address, Data, State}}, State};
-	true ->
-		try arya_common:part( Data, length( State#state.url), State#state.url_len) of
-			{ ok, Part } ->
-				{ reply, ok, State#state { url = [ Part | State#state.url ]}};
-			{ last, Part } ->
-				Url = lists:usort( fun compare/2, [ Part | State#state.url]), % sort with ununique values deletion
-				if length( Url) < State#state.url_len ->
-					Need = arya_common:need( Url),
-					{ reply, { need, Need}, State#state { url = Url}};
-				true ->
-					{ reply, last, State#state{ url = Url}}
-				end
-		catch 
-			error:Error ->
-				{ reply, { exception, { Error, Data, State}}, State}
-		end
+	try part( Data, length( State#state.url), State#state.url_len) of
+		{ ok, Part } ->
+			{ reply, ok, State#state { url = [ Part | State#state.url ]}};
+		{ last, Part } ->
+			Url = lists:usort( fun compare/2, [ Part | State#state.url]), % sort with ununique values deletion
+			if length( Url) < State#state.url_len ->
+				Need = need( Url),
+				{ reply, { need, Need}, State#state { url = Url}};
+			true ->
+				{ reply, last, State#state{ url = Url}}
+			end
+	catch 
+		error:Error ->
+			{ reply, { exception, { Error, Data, State}}, State}
 	end;
 process( Data, State) when Data#entry.type == ?STATUS ->
-	if Data#entry.from /= State#state.address ->
-		{ reply, { fail, { wrong_address, Data, State}}, State};
-	true ->
-		if % need no try since we're working with no external data
-			length(State#state.url) < State#state.url_len ->
-				Need = arya_common:need( State#state.url),
-				{ reply, { need, Need}, State};
-			State#state.data_len == 0 ->
-				{ reply, last, State };
-			true ->
-				{ reply, { ready, State#state.data_len}, State}
-		end
+	% format( "STATUS", State),
+	[ Ans | _] = Data#entry.url,
+	if % need no try since we're working with no external data
+		Ans == ?DONE ->
+			{ stop, normal, ok, State};
+		length(State#state.url) < State#state.url_len ->
+			Need = need( State#state.url),
+			{ reply, { need, Need}, State};
+		State#state.data_len == 0 ->
+			{ reply, last, State };
+		true ->
+			{ reply, { ready, State#state.data_len}, State}
 	end;
 process( Data, State) when Data#entry.type == ?RECV ->
-	if Data#entry.from /= State#state.address ->
-		{ reply, { fail, { wrong_address, Data, State}}, State};
-	true ->
-		if % need no try since we're working with no external data
-			length(State#state.url) < State#state.url_len ->
-				Need = arya_common:need( State#state.url),
-				{ reply, { need, Need}, State};
-			State#state.data_len == 0 ->
-				{ reply, last, State};
-			true ->
-				try 
-					[ BinNumber | _] = Data#entry.url,
-					Number = binary:decode_unsigned( BinNumber),
-					Item = lists:nth( Number, State#state.data),
-					{ reply, { recv, Item}, State}
-				catch 
-					error:Error -> 
-						{ reply, { exception, { Error, Data, State}}, State}
-				end
-		end
+	if % need no try since we're working with no external data
+		length(State#state.url) < State#state.url_len ->
+			Need = need( State#state.url),
+			{ reply, { need, Need}, State};
+		State#state.data_len == 0 ->
+			{ reply, last, State};
+		true ->
+			try 
+				[ BinNumber | _] = Data#entry.url,
+				{ Number, _} = string:to_integer(binary:bin_to_list( BinNumber)),
+				Item = lists:nth( Number+1, State#state.data),
+				{ reply, { recv, Item}, State}
+			catch 
+				error:Error -> 
+					{ reply, { exception, { Error}}, State}
+			end
 	end;
 process( Data, State) ->
 	{ reply, { fail, { unauthorized, Data, State}}, State}.
 	
+%%% @doc Generates a list of lost packets.
+need( Url) ->
+	need( lists:usort( fun compare/2, Url), [], -1).
+need( [], List, _Prev) ->
+	List;
+need( [ { Index, _} | Rest], List, Prev) ->
+	NewList = 
+		if Index == (Prev + 1) -> 
+			List;
+		true ->
+			[ Index | List]
+		end,
+	need( Rest, NewList, Index).
+	
 %%% @doc Gets a data from a packet and looks whether this packet is last
-% part( Raw, ActualLen, NeededLen) ->
-% 	[ Data | _] = Raw,
-% 	if ActualLen+1 >= NeededLen ->
-% 		{ last, Data};
-% 	true ->
-% 		{ ok, Data}
-% 	end.
+part( Raw, ActualLen, NeededLen) ->
+ 	[ BinIndex, Data | _] = Raw#entry.url,
+ 	Ret = if ActualLen+1 >= NeededLen ->
+			last;
+		true ->
+			ok
+	end,
+	{ Index, _} = string:to_integer( binary:bin_to_list( BinIndex)),
+	{ Ret, { Index, Data}}.
 
 %%% @doc Comparsion routine for usort.
 compare( { Index1, _}, { Index2, _}) when Index1 > Index2 ->
@@ -319,10 +349,11 @@ compare( { _Index1, _}, { _Index2, _}) ->
 %% Downloader ----------------------------------------------------------------------
 %%% @doc Perform all remote page downloading routines.
 download( State) when is_record( State, state) ->
-	Data = construct( State#state.url, []),
+	Data = construct( State#state.url, <<>>),
 	{ ok, Pure} = decrypt( Data),
 	{ ok, Address} = address( Pure),
 	{ ok, Packet} = request( Address, ?PORT, Pure),
+	%% format( "PACKET: ", Packet),
 	{ _Parts, _Len} = split( Packet, ?RESPONSE_LEN).
 	
 %%% @doc Constructs a packet from the list provided.
@@ -336,7 +367,7 @@ construct( [ {_, Part} | Rest], Ready) ->
 decrypt( Data ) ->
 	Replaced1 = binary:replace( Data, << $- >>, << $+ >>),
 	Replaced2 = binary:replace( Replaced1, << $_ >>, << $/ >>),
-	decode( Replaced2, 3).
+	{ ok, decode( Replaced2, 3)}.
 	
 %%% @doc Decodes the binary given, tries to add N parts sequentially until 
 %%% 	data becomes decodable, falls if not.
@@ -366,19 +397,30 @@ address( Request) -> % needs future research whether it even works.
 				),
 				string:substr( Lower, Pos+string:len(?HOST)+1, Len-1)
 		end,
-	string:strip( WithBlanks).
+	{ ok, string:strip( WithBlanks)}.
 	
 %%% @doc Makes a request to the remote server specified.
 request( Address, Port, Data ) ->
 	{ ok, Socket} = gen_tcp:connect( Address, Port, [ {active, false}, binary ]),
 	ok = gen_tcp:send( Socket, Data),
-	{ ok, _Packet} = gen_tcp:recv( Socket, 0).
+	{ ok, _Packet} = recv( Socket, <<>>).
+recv( Socket, Data) ->
+	{ ok, Timeout} = application:get_env( timeout),
+	case gen_tcp:recv( Socket, 0, Timeout) of 
+		{ ok, Packet} ->
+			recv( Socket, << Data/binary, Packet/binary >>);
+		{ error, _} ->
+			gen_tcp:close( Socket),
+			{ ok, Data}
+	end.
 	
 %%% @doc Splits a packet to parts not greater than lenght specified.
-split( Packet, Len) when is_binary( Packet), is_integer( Len) ->
-	lists:reverse(split( Packet, Len, [])).
-split( <<>>, Len, Array) ->
-	{ Array, Len};
+split( Packet, MaxLen) when is_binary( Packet), is_integer( MaxLen) ->
+	{ Parts, Len} = split( Packet, MaxLen, []),
+	%% format( "PARTS: ", Parts),
+	{ lists:reverse(Parts), Len}.
+split( <<>>, _Len, Array) ->
+	{ Array, length( Array)};
 split( Data, Len, Array) ->
 	{ Part, Rest} = 
 		try

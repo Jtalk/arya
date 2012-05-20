@@ -72,6 +72,7 @@ start_link() ->
 
 %%% @see Module:init/1 in gen_fsm(3).
 init( _) ->
+	random:seed( now()),
 	{ ok, null}.
 	
 process( Pid, Message) when is_record( Message, recv) ->
@@ -87,16 +88,18 @@ process( Pid, Message) when is_record( Message, recv) ->
 %%% @doc Main parsing routine of the processor.
 %%%
 process( Message)  ->
-	try
+	%%try
 		{ ok, Parsed} = arya_common:parse( Message), % we got the url array too
 		arya_common:postprocess( Parsed), % making decision about this packet.	
 		{ stop, normal, null}
-	catch
-		error:Error ->
-			ID = binary:part( Message#recv.data, 0, 2),
-			arya_common:send_back( Message#recv.from, { id, ID}),
-			{ stop, {error, Error}, null}
-	end.
+	%%catch
+	%%	error:Error ->
+	%%		ID = binary:part( Message#recv.data, 0, 2),
+	%%		format( "Error in arya_processor: ", Error),
+	%%		arya_common:send_back( Message#recv.from, { id, ID}),
+	%%		{ stop, {error, Error}, null}
+	%% end.
+	.
 		
 %%% @see Module:handle_cast/2 in gen_server(3).
 handle_cast( Message, _) when is_record( Message, recv) ->

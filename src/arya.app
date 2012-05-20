@@ -55,7 +55,8 @@
 				{ domain, [ <<"me">>, <<"jtalk">>, <<"d">>]},
 				{ max_token, 999999999 },
 				{ dns_port, 53},
-				{ sleep_time, 200}
+				{ sleep_time, 200},
+				{ timeout, 1000}
 			]
 		}
 	]

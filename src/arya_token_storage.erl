@@ -101,19 +101,23 @@ handle_info( Data, State ) ->
 	
 %%% @see Module:handle_call in gen_server(3).
 handle_call({ get, Token}, _, State) ->
-	Pid = assoc:get(Token, State),
-	case Pid of
+	Ret = assoc:get(Token, State),
+	case Ret of
 		false ->
 			{ reply, false, State};
-		Pid ->
-			{ relpy, {ok, Pid}, State}
+		{ value, Pid} ->
+			{ reply, {ok, Pid}, State}
 	end;
 handle_call({ add, Token, Pid}, _, State) ->
 	NewState = assoc:put(Token, Pid, State),
-	{ noreply, NewState};
-handle_call({ gel, Token}, _, State) ->
-	{ _, NewState } = assoc:delete( Token, State),
-	{ noreply, NewState};
+	{ reply, ok, NewState};
+handle_call({ del, Token}, _, State) ->
+	case assoc:delete( Token, State) of 
+		{ _, NewState} -> 
+			{ reply, ok, NewState};
+		_ -> 
+			{ reply, ok, State}
+	end;
 handle_call(Data, _, State) ->
 	format("Wrong call in arya_token_storage:",Data),
 	{ noreply, State}.

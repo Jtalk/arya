@@ -72,8 +72,8 @@ start_link(Token) ->
 
 %%% @see Module:init/1 in gen_fsm(3).
 init( Token ) ->
-	BinTok = base64:encode( Token),
-	{ ok, #state{ token = BinTok } }.
+	random:seed( now()),
+	{ ok, #state{ token = Token } }.
 	
 process( Pid, Data) ->
 	gen_server:call( Pid, Data).
@@ -83,12 +83,16 @@ download( Pid) ->
 	
 %%% @see Module:handle_event/3 in gen_fsm(3).
 handle_cast( download, State) ->
-	{ Data, Len} = arya_common:download( State),
-	{ noreply, 	State#state { 
-					data = Data, 
-					data_len = Len
-				}
-	};
+	if State#state.data_len > 0 ->
+		{ noreply, State};
+	true ->
+		{ Data, Len} = arya_common:download( State),
+		{ noreply, 	State#state { 
+						data = Data, 
+						data_len = Len
+					}
+		}
+	end;
 handle_cast( _, State) ->
 	{ noreply, State}.
 
@@ -103,7 +107,8 @@ handle_info( _, State) ->
 	{ noreply, State}.
 	
 %%% @see Module:terminate/3 in gen_fsm(3).
-terminate( _, _) ->
+terminate( _, State) ->
+	arya_token_storage:delete_pid( State#state.token),
 	ok.
 	
 %%% @see Module:code_change/4 in gen_fsm(3).
