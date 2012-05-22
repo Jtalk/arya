@@ -1,3 +1,4 @@
+%%
 %%	Copyright (C) 2012 Nazarenko Roman.
 %%
 %%	This file is part of Arya.

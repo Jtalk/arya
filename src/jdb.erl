@@ -1,6 +1,32 @@
+%%
+%%	Copyright (C) 2012 Nazarenko Roman.
+%%
+%%	This file is part of Arya.
+%%
+%%	Arya is free software: you can redistribute it and/or modify
+%%	it under the terms of the GNU General Public License as published by
+%%	the Free Software Foundation, either version 3 of the License, or
+%%	(at your option) any later version.
+%%
+%%	Arya is distributed in the hope that it will be useful,
+%%	but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%%	GNU General Public License for more details.
+%%
+%%	You should have received a copy of the GNU General Public License
+%%	along with Arya.  If not, see <http://www.gnu.org/licenses/>.
+
+%%	Author: Nazarenko Roman <mailto: me@jtalk.me>
+%%	License: <http://www.gnu.org/licenses/gpl.html>
+
 -module(jdb).
 
 -export( [ appenv/3, getenv/2, report/2, report/3, configure/0]).
+
+%%% ------------------------------------------------------------------------
+%%% This is the debug module with debug leveling support. It uses standard
+%%% Erlang error_logger module, supports both tty and file output.
+%%% ------------------------------------------------------------------------
 
 appenv( Name, Function, ErrorMessage) ->
 	case application:get_env( Name) of

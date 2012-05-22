@@ -1,3 +1,4 @@
+%%
 %%	Copyright (C) 2012 Nazarenko Roman.
 %%
 %%	This file is part of Arya.
@@ -17,6 +18,7 @@
 
 %%	Author: Nazarenko Roman <mailto: me@jtalk.me>
 %%	License: <http://www.gnu.org/licenses/gpl.html>
+
 
 
 -import(jdb, [report/3, report/2, appenv/3, getenv/2]).
