@@ -21,8 +21,6 @@
 -module(arya_dl).
 -behaviour(gen_server).
 
-%% Debug.
--import(error_logger, [format/2]).
 %% Standard overproject types.
 -include("arya_types.hrl").
 
@@ -73,6 +71,8 @@ start_link(Token) ->
 %%% @see Module:init/1 in gen_fsm(3).
 init( Token ) ->
 	random:seed( now()),
+	report( 1, "Starting Downloader"),
+	report( 2, "Downloader token", Token),
 	{ ok, #state{ token = Token } }.
 	
 process( Pid, Data) ->
@@ -83,7 +83,11 @@ download( Pid) ->
 	
 %%% @see Module:handle_event/3 in gen_fsm(3).
 handle_cast( download, State) ->
+	report( 1, "Downloader received cast for page download"),
+	report( 3, "Downloader state", State),
+
 	if State#state.data_len > 0 ->
+		report( 1, "Already downloaded"),
 		{ noreply, State};
 	true ->
 		{ Data, Len} = arya_common:download( State),
@@ -93,24 +97,35 @@ handle_cast( download, State) ->
 					}
 		}
 	end;
-handle_cast( _, State) ->
+handle_cast( Data, State) ->
+	report( 0, "Wrong cast in Downloader"),
+	report( 3, "Downloader data", Data),
+	report( 3, "Downloader state", State),
 	{ noreply, State}.
 
 %%% @see Module:handle_sync_event/4 in gen_fsm(3).
 handle_call( Data, _, State) when is_record( Data, entry) ->
-	arya_common:process( Data, State);
-handle_call(_, _, State) ->
+	arya_process:process( Data, State);
+handle_call(Data, _, State) ->
+	report( 0, "Wrong call in Downloader"),
+	report( 3, "Downloader data", Data),
+	report( 3, "Downloader state", State),
 	{ reply, ok, State}.
 
 %%% @see Module:handle_info/3 in gen_fsm(3).
-handle_info( _, State) ->
+handle_info( Data, State) ->
+	report( 0, "Wrong info in Downloader"),
+	report( 3, "Downloader data", Data),
+	report( 3, "Downloader state", State),
 	{ noreply, State}.
 	
 %%% @see Module:terminate/3 in gen_fsm(3).
-terminate( _, State) ->
+terminate( Reason, State) ->
+	report( 1, "Downloader terminating", Reason),
 	arya_token_storage:delete_pid( State#state.token),
 	ok.
 	
 %%% @see Module:code_change/4 in gen_fsm(3).
 code_change( _, StateData, _) ->
+	report( 1, "Code changing in Downloader"),
 	{ ok, StateData}.

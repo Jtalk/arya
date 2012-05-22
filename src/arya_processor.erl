@@ -21,8 +21,6 @@
 -module(arya_processor).
 -behaviour(gen_server).
 
-%% Debig.
--import(error_logger, [format/2]).
 %% Standard overproject types.
 -include("arya_types.hrl").
 
@@ -73,56 +71,63 @@ start_link() ->
 %%% @see Module:init/1 in gen_fsm(3).
 init( _) ->
 	random:seed( now()),
+	report( 1, "Processor starting"),
 	{ ok, null}.
 	
-process( Pid, Message) when is_record( Message, recv) ->
-	gen_server:cast( Pid, Message).
-	
-%% Callback		
 %%% @spec process( Message) -> Result
 %%%		Message = record(recv)
 %%%		Result = { stop, Reason, null}
 %%%		 Reason = normal | { error, Error}
 %%%		  Error = term()
 %%%	
-%%% @doc Main parsing routine of the processor.
+%%% @doc Main parsing routine starter.
 %%%
+process( Pid, Message) when is_record( Message, recv) ->
+	report( 1, "Processing message", Pid),
+	report( 3, "Message", Message),
+	gen_server:cast( Pid, Message).
+	
+	
+%%% @doc Main parsing routine of the processor.
 process( Message)  ->
-	%%try
-		{ ok, Parsed} = arya_common:parse( Message), % we got the url array too
-		arya_common:postprocess( Parsed), % making decision about this packet.	
+	try
+		{ ok, Parsed} = arya_parse:parse( Message), % we got the url array too
+		arya_decision:postprocess( Parsed), % making decision about this packet.	
 		{ stop, normal, null}
-	%%catch
-	%%	error:Error ->
-	%%		ID = binary:part( Message#recv.data, 0, 2),
-	%%		format( "Error in arya_processor: ", Error),
-	%%		arya_common:send_back( Message#recv.from, { id, ID}),
-	%%		{ stop, {error, Error}, null}
-	%% end.
-	.
-		
+	catch
+		error:Error ->
+			ID = binary:part( Message#recv.data, 0, 2),
+			report( 0, "Error in Processor", Error),
+			arya_common:send_back( Message#recv.from, { id, ID}),
+			{ stop, {error, Error}, null}
+	end.
+	
+%% Callback		
 %%% @see Module:handle_cast/2 in gen_server(3).
 handle_cast( Message, _) when is_record( Message, recv) ->
 	process( Message), % start handling cycle
 	{ stop, normal, null};
 handle_cast( Data, State) ->
-	format("Wrong cast in arya_processor: ", Data),
+	report( 0, "Wrong cast in Processor", Data),
 	{ noreply, State}.
 
 %%% @see Module:handle_sync_event/4 in gen_fsm(3).
 handle_call( Data, _, State) ->
-	format("Wrong sync event in arya_processor: ",Data),
+	report( 0, "Wrong sync event in Processor",Data),
 	{ reply, ok, State}.
 
 %%% @see Module:handle_info/3 in gen_fsm(3).
 handle_info( Data, State) ->
-	format("Wrong info in arya_processor: ",Data),
+	report( 0, "Wrong info in Processor",Data),
 	{ noreply, State}.
 	
 %%% @see Module:terminate/3 in gen_fsm(3).
-terminate( _, _) ->
+terminate( Reason, _) ->
+	report( 1, "Terminating Processor"), 
+	report( 2, "Reason", Reason),
 	ok.
 	
 %%% @see Module:code_change/4 in gen_fsm(3).
 code_change( _, StateData, _) ->
+	report( 1, "Code changing in Processor"),
 	{ ok, StateData}.

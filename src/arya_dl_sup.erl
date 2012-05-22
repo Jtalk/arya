@@ -21,10 +21,7 @@
 -module(arya_dl_sup).
 -behaviour(supervisor).
 
-%% Debug.
--import(error_logger, [format/2]).
-%% Standard overproject types.
--include("arya_types.hrl").
+-import(jdb, [report/3, report/2, appenv/3, getenv/1]).
 
 %% Starting the supervisor.
 -export([ start_link/1]).
@@ -59,6 +56,7 @@
 %%% @doc Initializes Arya processors and handles them.
 %%%
 start_link(Args) ->
+	report( 1, "Starting downloaders' supervisor"),
 	supervisor:start_link( 
 		{local, arya_dl_sup}, 
 		arya_dl_sup, 
@@ -67,6 +65,7 @@ start_link(Args) ->
 	
 %%% @see Module:init/1 in supervisor(3).
 init({ MaxR, MaxT, Await}) ->
+	report( 1, "Downloader supervisor starting"),
 	{ ok, 
 		{
 			{ simple_one_for_one , MaxR, MaxT }, 
@@ -89,6 +88,9 @@ init({ MaxR, MaxT, Await}) ->
 %%% It registers itself in arya_token_storage.
 %%%
 child( Token ) ->
+	report( 1, "Creating a downloader"),
+	report( 2, "Token", Token),
+	
 	case arya_token_storage:get_pid( Token) of
 		false ->
 			{ ok, Pid} = supervisor:start_child( arya_dl_sup, [Token]),

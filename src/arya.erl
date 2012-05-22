@@ -22,7 +22,7 @@
 -behaviour(application).
 
 %% Debug
--import(error_logger, [format/2]).
+-import(jdb, [report/3, appenv/3, ret/1]).
 
 %% Callbacks
 -export([ start/2, stop/1]).
@@ -42,11 +42,13 @@
 %%% @doc Starts the Arya application with the supervision timings provided
 %%%
 start( _, Timing ) ->
-	error_logger:logfile( { open, "./log.txt"}),
-	random:seed(),
+	jdb:configure(),
 	case arya_main_sup:start_link(Timing) of
 		ignore ->
+			report( 0, "Unable to load Arya application", ignore),
 			{ error, ignore };
+		Error = { error, _} ->
+			report( 0, "Unable to load Arya application", Error);
 		Ret -> 
 			Ret
 	end.

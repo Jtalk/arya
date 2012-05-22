@@ -22,7 +22,7 @@
 -behaviour(supervisor).
 
 %% Debug
--import(error_logger, [format/2]).
+-import(jdb, [report/3, report/2, appenv/3, ret/1]).
 
 %% Callback and start function 
 -export( [ start_link/1, init/1]).
@@ -59,12 +59,13 @@ start_link( { MaxR, MaxT} ) ->
 	
 %%% @see Module:init/1 in supervisor(3).
 init( { MaxR, MaxT} ) ->
+	report( 1, "Arya main supervisor initializing"),
 	{ ok, 
 		{ 
 			{ one_for_one, MaxR, MaxT },
 			[  %% Internal name			 Start module name		Start func	Start arguments			Restart type	Exit timeout	Process type	Modules needed
-				{ arya_server, 			{ arya_server,			start_link, [null]}, 				transient, 		10000, 			worker, 		[arya_server] },
-				{ arya_token_storage, 	{ arya_token_storage,	start_link,	[null]}, 				transient, 		1000, 			worker, 		[arya_token_storage]},
+				{ arya_server, 			{ arya_server,			start_link, [null]}, 				transient, 		1000, 			worker, 		[arya_server] },
+				{ arya_token_storage, 	{ arya_token_storage,	start_link,	[null]}, 				transient, 		100, 			worker, 		[arya_token_storage]},
 				{ arya_proc_sup, 		{ arya_proc_sup, 		start_link, [{ MaxR, MaxT, 100}]}, 	transient, 		infinity,		supervisor, 	[arya_proc_sup]},
 				{ arya_dl_sup, 			{ arya_dl_sup, 			start_link, [{ MaxR, MaxT, 100}]}, 	transient, 		infinity,		supervisor, 	[arya_dl_sup]}				
 			]

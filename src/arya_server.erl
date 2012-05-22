@@ -21,7 +21,6 @@
 -module(arya_server).
 -behaviour(gen_server).
 
--import(error_logger, [format/2]).
 -include("arya_types.hrl").
 
 %% Start/stop functions
@@ -56,6 +55,7 @@
 %%% For now server starts in active mode.
 %%%
 start_link( Args ) ->
+	report( 1, "Starting DNS server"),
 	gen_server:start_link(
 		{ local, ?MODULE },
 		?MODULE,
@@ -75,14 +75,9 @@ start_link( Args ) ->
 %%% See gen_server(3) for further information.
 %%%
 init( _Args ) ->
-	{ ok, Port} = application:get_env(dns_port),
-	{ ok, _Socket} = gen_udp:open( 
-		Port,
-		[
-			{ active, true}, 
-			binary
-		]
-	).
+	Port = getenv( dns_port, "Unable to read application setting dns_port"),
+	DnsParams = getenv( dns_params, "Unable to read application setting dns_params"),
+	{ ok, _Socket} = gen_udp:open( Port, DnsParams).
 		
 %%% @spec send( Message) -> ok
 %%%		Message = { send, Dest, Packet}
@@ -97,11 +92,16 @@ send( Message) when is_record( Message, send) ->
 	gen_server:cast( ?MODULE, Message ). 
 	
 %%% @doc Termination callback.
-terminate( _Reason, Socket ) ->
+terminate( Reason, Socket ) ->
+	report( 1, "Terminating DNS server"), 
+	report( 2, "Reason", Reason),
 	gen_udp:close(Socket). % closes the socket
 	
 %%% @see Module:handle_info/2 in gen_server(3).
 handle_info( Message, Socket) when is_record( Message, udp) ->
+	report( 1, "DNS packet received"),
+	report( 3, "Message", Message),
+	
 	{ ok, Child } = arya_proc_sup:child(),
 	arya_processor:process( Child,	#recv {
 										from = { Message#udp.address, Message#udp.port },
@@ -110,16 +110,19 @@ handle_info( Message, Socket) when is_record( Message, udp) ->
 	),
 	{ noreply, Socket};
 handle_info( Data, State ) ->
-	format("Wrong info in arya_server:",Data),
+	report(0, "Wrong info in DNS server",Data),
 	{ noreply, State }.
 	
 %%% @see Module:handle_call/3 in gen_server(3).
 handle_call(Data, _, State) ->
-	format("Wrong call in arya_server:",Data),
+	report(0, "Wrong call in DNS server",Data),
 	{ reply, unknown, State }.
 
 %%% @see Module:handle_cast/2 in gen_server(3).
 handle_cast( Message , Socket) when is_record( Message, send) ->
+	report( 1, "DNS package sending"),
+	report( 3, "Package", Message),
+	
 	{ Address, Port} = Message#send.to, % getting dest addresss/port pair
 	case gen_udp:send( Socket, Address, Port, Message#send.data) of
 	% sending a packet gotten
@@ -129,11 +132,12 @@ handle_cast( Message , Socket) when is_record( Message, send) ->
 			{ stop, Reason, Socket}
 	end;
 handle_cast( Data, State) ->
-	format("Wrong cast in arya_server:",Data),
+	report(0, "Wrong cast in DNS server",Data),
 	{ noreply, State }.
 	
 %%% @see Module:code_change/3 in gen_server(3).
 code_change(_, State, _) ->
+	report( 1, "Code change in DNS server"),
 	{ ok, State }.
 	
 

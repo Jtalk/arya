@@ -22,9 +22,7 @@
 -behaviour(supervisor).
 
 %% Debug
--import(error_logger, [format/2]).
-%% Standard overproject types.
--include("arya_types.hrl").
+-import(jdb, [report/3, report/2, appenv/3, getenv/1]).
 
 %% Starting
 -export([ start_link/1]).
@@ -63,6 +61,7 @@
 %%% @doc Initializes Arya processors and handles them.
 %%%
 start_link( { MaxR, MaxT, Await} ) ->
+	report( 1, "Starting processors' supervisor"),
 	supervisor:start_link(
 		{ local, arya_proc_sup },
 		arya_proc_sup,
@@ -71,6 +70,7 @@ start_link( { MaxR, MaxT, Await} ) ->
 
 %%% @see Module:init/1 in supervisor(3).
 init( { MaxR, MaxT, Await} ) ->
+	report( 1, "Process supervisor starting"),
 	{ ok, 
 		{
 			{ simple_one_for_one , MaxR, MaxT }, 
@@ -90,5 +90,6 @@ init( { MaxR, MaxT, Await} ) ->
 %%%	@doc Starts new Arya processor to process a Message specified.
 %%%
 child() ->
+	report( 1, "Child creating in Process supervisor"),
 	supervisor:start_child( ?MODULE, []).
 	

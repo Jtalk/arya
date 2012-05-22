@@ -19,6 +19,8 @@
 %%	License: <http://www.gnu.org/licenses/gpl.html>
 
 
+-import(jdb, [report/3, report/2, appenv/3, getenv/2]).
+
 %% Proto entry types.
 -define(INIT, 256).
 -define(SEND, 257).

@@ -21,7 +21,7 @@
 -module(arya_token_storage).
 -behaviour(gen_server).
 
--import(error_logger, [format/2]).
+-import(jdb, [report/3, report/2, appenv/3, getenv/1]).
 
 -export([ start_link/1, terminate/2]).
 -export([ init/1]).
@@ -62,16 +62,19 @@ start_link(_) ->
 %%% See gen_server(3) for further information.
 %%%
 init(_) ->
+	report( 1, "Token storage started"),
 	{ ok, assoc:empty()}.
 	
 %% Routines
 %%% @spec get_pid( Token) -> { ok, Pid} | false
-%%%		Token = term()
+%%%		Token = false | term() 
 %%%
 %%% @doc Returns Pid if there is a pid on storage, and false otherwise.
 %%%
 get_pid( Token ) ->
-	gen_server:call( arya_token_storage, { get, Token}).
+	Pid = gen_server:call( arya_token_storage, { get, Token}),
+	report( 2, "Getting token", { Token, Pid}),
+	Pid.
 
 %%% @spec add_pid( Token, Pid) -> ok
 %%%		Token = term()
@@ -79,6 +82,7 @@ get_pid( Token ) ->
 %%% @doc Adds Pid to the storage.
 %%%
 add_pid( Token, Pid) ->
+	report( 2, "Adding PID", { Token, Pid}),
 	gen_server:call( arya_token_storage, { add, Token, Pid}).
 	
 %%% @spec delete_pid( Token) -> ok
@@ -87,16 +91,20 @@ add_pid( Token, Pid) ->
 %%% @doc Removes an entry associated with the Token from the storage.
 %%%
 delete_pid( Token ) ->
-	gen_server:call( arya_token_storage, { del, Token}).
+	Pid = gen_server:call( arya_token_storage, { del, Token}),
+	report( 2, "Deleting PID", { Token, Pid}),
+	Pid.
 	
 %% Callbacks
 %%% @doc Termination callback.
-terminate( _Reason, _State ) ->
+terminate( Reason, _State ) ->
+	report( 1, "Token storage terminated"),
+	report( 2, "Reason", Reason),
 	ok.
 	
 %%% @see Module:handle_info in gen_server(3).
 handle_info( Data, State ) ->
-	format("Wrong info in arya_token_storage:",Data),
+	report( 0, "Wrong info in Token storage", Data),
 	{ noreply, State }.
 	
 %%% @see Module:handle_call in gen_server(3).
@@ -119,16 +127,17 @@ handle_call({ del, Token}, _, State) ->
 			{ reply, ok, State}
 	end;
 handle_call(Data, _, State) ->
-	format("Wrong call in arya_token_storage:",Data),
+	report( 0, "Wrong call in Token storage",Data),
 	{ noreply, State}.
 
 %%% @see Module:handle_cast in gen_server(3).
 handle_cast( Data, State) ->
-	format("Wrong cast in arya_token_storage:",Data),
+	report( 0, "Wrong cast in Token storage",Data),
 	{ noreply, State }.
 	
 %%% @see Module:code_change in gen_server(3).
 code_change(_, State, _) ->
+	report( 1, "Code change in Token storage"),
 	{ ok, State }.
 	
 
