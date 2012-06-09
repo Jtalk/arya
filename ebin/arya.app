@@ -48,21 +48,21 @@
 		},
 		{ 
 			mod, 
-			{ arya, {2, 3600}} 
+			{ arya, {2, 3600}} % Maximum restart frequency
 		},
 		{ 
 			env, 
 			[
-				{ log, "/var/logs/arya" },
-				{ domain, [ <<"me">>, <<"jtalk">>, <<"d">>]},
-				{ max_token, 999999 },
-				{ dns_port, 53},
+				{ logfile, { open, "../log.txt"}},
+				{ loglevel, 1},
+				{ domain, [ <<"me">>, <<"jtalk">>, <<"d">>]}, % which domain is must process
+				{ dns_port, 53},		% which port server must bind itself
+				{ max_token, 999999 }, 	% maximum tokem to generate
 				{ sleep_time, 200},
-				{ timeout, 2500},
-				{ logfile, { open, "./log.txt"}},
-				{ is_tty, true},
-				{ dns_params, [ { active, true}, binary]},
-				{ loglevel, 2}
+				{ timeout, 2500},		% tcp session timeout
+				{ is_tty, true},		% tty logging switcher
+				{ dns_params, [ { active, true}, binary]} 	% dns socket parameters, you better not to touch it 
+															% since you're not sure what are you doing.
 			]
 		}
 	]

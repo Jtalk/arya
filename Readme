@@ -1,0 +1,22 @@
+
+
+This is the DNS tunneling proxy project server. It must be started at where the NS entry of the domain 
+is pointed. Protocol doesn't protect all the data inside so you better not to use this for security 
+data transfers. In fact, the only purpose it's built is "googling" from the areas blocked by a local 
+firewall (such as the university local network).
+
+You probably should firstly configure the server in "ebin/arya.app". All the parameters are either 
+commented or having a name speaks itself. If neither, it's better not to touch that. All the numeric 
+parameters were optimal for our network, but you may change them if your network isn't proper (for example, 
+you could change TCP timeout if you're about to download old self-hosted websites). Pay attention: it 
+you're changing TCP timeout, you almost always are to change client's DNS timeout too. 
+
+Logging levels are not clear, so here's the description:
+	0: Only errors, with data;
+	1: Waypoints, without data;
+	2: Waypoints, with one-string data (PIDs, tokens, etc.);
+	3: All the data — packets, requests, etc.
+	
+The default (and the best) value is 0. You may change it to -1 to avoid all the output (except OTP error 
+messages), but this's unsafe.
+
