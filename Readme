@@ -8,8 +8,8 @@ firewall (such as the university local network).
 You probably should firstly configure the server in "ebin/arya.app". All the parameters are either 
 commented or having a name speaks itself. If neither, it's better not to touch that. All the numeric 
 parameters were optimal for our network, but you may change them if your network isn't proper (for example, 
-you could change TCP timeout if you're about to download old self-hosted websites). Pay attention: it 
-you're changing TCP timeout, you almost always are to change client's DNS timeout too. 
+you could change TCP timeout if you're about to download old self-hosted websites). Pay attention: if 
+you're changing TCP timeout, you almost are to change client's DNS timeout too. 
 
 Logging levels are not clear, so here's the description:
 	0: Only errors, with data;
