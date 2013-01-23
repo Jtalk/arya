@@ -50,10 +50,10 @@
 %%% @doc Starts the Arya UDP server.
 %%% For now server starts in active mode.
 %%%
-start_link(Args ) ->
+start_link(Args) ->
   report(1, "Starting DNS server"),
   gen_server:start_link(
-    {local, ?MODULE },
+    {local, ?MODULE},
     ?MODULE,
     Args, 
     []
@@ -69,16 +69,16 @@ start_link(Args ) ->
 %%% @doc Sends the message provided to the socket connected with the current gen_server.
 %%%
 send(Message) ->
-  gen_server:cast(?MODULE, Message ). 
+  gen_server:cast(?MODULE, Message). 
   
 %% Callbacks:  
 
-init(_Args ) ->
+init(_Args) ->
   Port = getenv(dns_port, "Unable to read application setting dns_port"),
   DnsParams = getenv(dns_params, "Unable to read application setting dns_params"),
   {ok, _Socket} = gen_udp:open(Port, DnsParams).
   
-terminate(Reason, Socket ) ->
+terminate(Reason, Socket) ->
   report(1, "Terminating DNS server"), 
   report(2, "Reason", Reason),
   gen_udp:close(Socket). % closes the socket
