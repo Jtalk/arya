@@ -92,51 +92,53 @@ delete_pid(Token ) ->
   
 %% Callbacks:
 
-%% Initialization callback for OTP gen_server.
 init(_) ->
   report(1, "Token storage started"),
   {ok, assoc:empty()}.
   
-%%% @doc Termination callback.
 terminate(Reason, _State ) ->
   report(1, "Token storage terminated"),
   report(2, "Reason", Reason),
   ok.
   
-%%% @see Module:handle_info in gen_server(3).
+%%% No info handled.
 handle_info(Data, State ) ->
   report(0, "Wrong info in Token storage", Data),
   {noreply, State }.
   
-%%% @see Module:handle_call in gen_server(3).
-handle_call({get, Token}, _, State) ->
-  Ret = assoc:get(Token, State),
+%%% Storage handles all the requrests via synchronous calls.
+%% Calls:
+handle_call({get, Token}, _, Storage) ->
+  Ret = assoc:get(Token, Storage),
   case Ret of
     false ->
-      {reply, false, State};
+      {reply, false, Storage};
     {value, Pid} ->
-      {reply, {ok, Pid}, State}
+      {reply, {ok, Pid}, Storage}
   end;
-handle_call({add, Token, Pid}, _, State) ->
-  NewState = assoc:put(Token, Pid, State),
-  {reply, ok, NewState};
-handle_call({del, Token}, _, State) ->
-  case assoc:delete(Token, State) of 
-    {_, NewState} -> 
-      {reply, ok, NewState};
+  
+handle_call({add, Token, Pid}, _, Storage) ->
+  NewStorage = assoc:put(Token, Pid, Storage),
+  {reply, ok, NewStorage};
+  
+handle_call({del, Token}, _, Storage) ->
+  case assoc:delete(Token, Storage) of 
+    {_, NewStorage} -> 
+      {reply, ok, NewStorage};
     _ -> 
-      {reply, ok, State}
+      {reply, ok, Storage}
   end;
+  
 handle_call(Data, _, State) ->
   report(0, "Wrong call in Token storage",Data),
   {noreply, State}.
 
-%%% @see Module:handle_cast in gen_server(3).
+%% Casts:
 handle_cast(Data, State) ->
   report(0, "Wrong cast in Token storage",Data),
   {noreply, State }.
   
-%%% @see Module:code_change in gen_server(3).
+%% Just dummy code_change callback.
 code_change(_, State, _) ->
   report(1, "Code change in Token storage"),
   {ok, State }.
