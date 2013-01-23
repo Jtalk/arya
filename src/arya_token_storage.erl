@@ -24,15 +24,16 @@
 
 -module(arya_token_storage).
 -behaviour(gen_server).
-
 -import(jdb, [report/3, report/2, appenv/3, getenv/1]).
 
--export([ start_link/1, terminate/2]).
+%% Callbacks:
+-export([ terminate/2]).
 -export([ init/1]).
 -export([ handle_info/2, handle_call/3, handle_cast/2]). 
 -export([ code_change/3]).
--export([ get_pid/1, add_pid/2, delete_pid/1]).
 
+%% Server queries:
+-export([ start_link/1, get_pid/1, add_pid/2, delete_pid/1]).
 
 %%% -------------------------------------------------------
 %%% This is the Arya server storing PIDs for all the tokens
