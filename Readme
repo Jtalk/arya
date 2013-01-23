@@ -19,5 +19,7 @@ Logging levels are not clear, so here's the description:
   2: Waypoints, with one-string data (PIDs, tokens, etc.);
   3: All the data — packets, requests, etc.
 
-The default (and the best) value is 0. You may change it to -1 to avoid all the output (except OTP error 
-messages), but this's unsafe.
+The default (and the best) value is 0. You may change it to -1 to avoid all the output 
+(except OTP error messages), but that's unsafe.
+
+This project uses associative arrays library from Dan Sahlin <dan@cslab.ericsson>.
