@@ -27,6 +27,21 @@
 {application, arya,
   [
     {
+      description,
+      "DNS Proxy server"
+    },
+    {
+      registered,
+      [
+        arya,
+        arya_main_sup,
+        arya_token_storage,
+        arya_server,
+        arya_proc_sup,
+        arya_dl_sup
+      ]
+    },
+    {
       modules, 
       [
         arya,
@@ -46,6 +61,9 @@
         assoc
       ]
     },
+    {
+      vsn, "0.1"
+    },
     { 
       mod, 
       { arya, {2, 3600}} % Maximum restart frequency (for internal supervisor).
@@ -56,13 +74,21 @@
         { logfile, { open, "../log.txt"}},
         { loglevel, 1},
         { domain, [ <<"me">>, <<"jtalk">>, <<"d">>]}, % Server's domain in reverse order.
-        { dns_port, 53},    % which port server must bind.
+        { dns_port, 4567},    % which port server must bind.
         { max_token, 999999 },   % maximum token to generate.
         { sleep_time, 200},
         { timeout, 2500},    % tcp session timeout
         { is_tty, true},    % tty logging switcher
         { dns_params, [ { active, true}, binary]}   % dns socket parameters, you better not to touch it 
                                                     % since you're not sure what's going on.
+      ]
+    },
+    {
+      applications,
+      [
+        kernel,
+        stdlib,
+        sasl
       ]
     }
   ]
