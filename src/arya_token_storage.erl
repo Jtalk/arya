@@ -1,23 +1,26 @@
 %%
-%%	Copyright (C) 2012 Nazarenko Roman.
+%%  Copyright (C) 2012-2013 Roman Nazarenko.
 %%
-%%	This file is part of Arya.
+%%  This file is part of Arya.
 %%
-%%	Arya is free software: you can redistribute it and/or modify
-%%	it under the terms of the GNU General Public License as published by
-%%	the Free Software Foundation, either version 3 of the License, or
-%%	(at your option) any later version.
+%%  Arya is free software: you can redistribute it and/or modify
+%%  it under the terms of the GNU General Public License as published by
+%%  the Free Software Foundation, either version 3 of the License, or
+%%  (at your option) any later version.
 %%
-%%	Arya is distributed in the hope that it will be useful,
-%%	but WITHOUT ANY WARRANTY; without even the implied warranty of
-%%	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-%%	GNU General Public License for more details.
+%%  Arya is distributed in the hope that it will be useful,
+%%  but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%%  GNU General Public License for more details.
 %%
-%%	You should have received a copy of the GNU General Public License
-%%	along with Arya.  If not, see <http://www.gnu.org/licenses/>.
+%%  You should have received a copy of the GNU General Public License
+%%  along with Arya.  If not, see <http://www.gnu.org/licenses/>.
 
-%%	Author: Nazarenko Roman <mailto: me@jtalk.me>
-%%	License: <http://www.gnu.org/licenses/gpl.html>
+%%  Author: Nazarenko Roman <mailto: me@jtalk.me>
+%%  License: <http://www.gnu.org/licenses/gpl.html>
+
+%% @author Roman Nazarenko <me@jtalk.me>
+%% @copyright 2012-2013 Roman Nazarenko
 
 -module(arya_token_storage).
 -behaviour(gen_server).
@@ -38,108 +41,105 @@
 %%% incoming and outcoming connections.
 %%% -------------------------------------------------------
 
-%% Starting
-%%% @spec start_link( Args) -> Result
-%%%		Args = term(), ignored
-%%%		Result = {ok,Pid} | ignore | {error,Error}
-%%%		 Pid = pid()
-%%%		 Error = {already_started,Pid} | term()
+%% Starting:
+
+%%% @spec start_link(Args) -> Result
+%%%    Args = term(), ignored
+%%%    Result = {ok,Pid} | ignore | {error,Error}
+%%%     Pid = pid()
+%%%     Error = {already_started,Pid} | term()
 %%%
 %%% @doc Starts the Arya token storage.
 %%%
 start_link(_) ->
-	gen_server:start_link( 
-		{ local, ?MODULE}, 
-		?MODULE, 
-		[], 
-		[]
-	).
-	
-%%% @spec init( Args) -> { ok, nil}
-%%%		Args = term(), ignored
-%%%
-%%% @doc Arya token storage starting callback.
-%%%
-%%% See gen_server(3) for further information.
-%%%
-init(_) ->
-	report( 1, "Token storage started"),
-	{ ok, assoc:empty()}.
-	
-%% Routines
-%%% @spec get_pid( Token) -> { ok, Pid} | false
-%%%		Token = false | term() 
+  gen_server:start_link(
+    {local, ?MODULE}, 
+    ?MODULE, 
+    [], 
+    []
+  ).
+    
+%% Routines:
+
+%%% @spec get_pid(Token) -> {ok, Pid} | false
+%%%    Token = false | term() 
 %%%
 %%% @doc Returns Pid if there is a pid on storage, and false otherwise.
 %%%
-get_pid( Token ) ->
-	Pid = gen_server:call( arya_token_storage, { get, Token}),
-	report( 2, "Getting token", { Token, Pid}),
-	Pid.
+get_pid(Token) ->
+  Pid = gen_server:call(arya_token_storage, {get, Token}),
+  report(2, "Getting token", {Token, Pid}),
+  Pid.
 
-%%% @spec add_pid( Token, Pid) -> ok
-%%%		Token = term()
+%%% @spec add_pid(Token, Pid) -> ok
+%%%    Token = term()
 %%%
 %%% @doc Adds Pid to the storage.
 %%%
-add_pid( Token, Pid) ->
-	report( 2, "Adding PID", { Token, Pid}),
-	gen_server:call( arya_token_storage, { add, Token, Pid}).
-	
-%%% @spec delete_pid( Token) -> ok
-%%%		Token = term()
+add_pid(Token, Pid) ->
+  report(2, "Adding PID", {Token, Pid}),
+  gen_server:call(arya_token_storage, {add, Token, Pid}).
+  
+%%% @spec delete_pid(Token) -> ok
+%%%    Token = term()
 %%%
 %%% @doc Removes an entry associated with the Token from the storage.
 %%%
-delete_pid( Token ) ->
-	Pid = gen_server:call( arya_token_storage, { del, Token}),
-	report( 2, "Deleting PID", { Token, Pid}),
-	Pid.
-	
-%% Callbacks
+delete_pid(Token ) ->
+  Pid = gen_server:call(arya_token_storage, {del, Token}),
+  report(2, "Deleting PID", {Token, Pid}),
+  Pid.
+  
+%% Callbacks:
+
+%% Initialization callback for OTP gen_server.
+init(_) ->
+  report(1, "Token storage started"),
+  {ok, assoc:empty()}.
+  
 %%% @doc Termination callback.
-terminate( Reason, _State ) ->
-	report( 1, "Token storage terminated"),
-	report( 2, "Reason", Reason),
-	ok.
-	
+terminate(Reason, _State ) ->
+  report(1, "Token storage terminated"),
+  report(2, "Reason", Reason),
+  ok.
+  
 %%% @see Module:handle_info in gen_server(3).
-handle_info( Data, State ) ->
-	report( 0, "Wrong info in Token storage", Data),
-	{ noreply, State }.
-	
+handle_info(Data, State ) ->
+  report(0, "Wrong info in Token storage", Data),
+  {noreply, State }.
+  
 %%% @see Module:handle_call in gen_server(3).
-handle_call({ get, Token}, _, State) ->
-	Ret = assoc:get(Token, State),
-	case Ret of
-		false ->
-			{ reply, false, State};
-		{ value, Pid} ->
-			{ reply, {ok, Pid}, State}
-	end;
-handle_call({ add, Token, Pid}, _, State) ->
-	NewState = assoc:put(Token, Pid, State),
-	{ reply, ok, NewState};
-handle_call({ del, Token}, _, State) ->
-	case assoc:delete( Token, State) of 
-		{ _, NewState} -> 
-			{ reply, ok, NewState};
-		_ -> 
-			{ reply, ok, State}
-	end;
+handle_call({get, Token}, _, State) ->
+  Ret = assoc:get(Token, State),
+  case Ret of
+    false ->
+      {reply, false, State};
+    {value, Pid} ->
+      {reply, {ok, Pid}, State}
+  end;
+handle_call({add, Token, Pid}, _, State) ->
+  NewState = assoc:put(Token, Pid, State),
+  {reply, ok, NewState};
+handle_call({del, Token}, _, State) ->
+  case assoc:delete(Token, State) of 
+    {_, NewState} -> 
+      {reply, ok, NewState};
+    _ -> 
+      {reply, ok, State}
+  end;
 handle_call(Data, _, State) ->
-	report( 0, "Wrong call in Token storage",Data),
-	{ noreply, State}.
+  report(0, "Wrong call in Token storage",Data),
+  {noreply, State}.
 
 %%% @see Module:handle_cast in gen_server(3).
-handle_cast( Data, State) ->
-	report( 0, "Wrong cast in Token storage",Data),
-	{ noreply, State }.
-	
+handle_cast(Data, State) ->
+  report(0, "Wrong cast in Token storage",Data),
+  {noreply, State }.
+  
 %%% @see Module:code_change in gen_server(3).
 code_change(_, State, _) ->
-	report( 1, "Code change in Token storage"),
-	{ ok, State }.
-	
+  report(1, "Code change in Token storage"),
+  {ok, State }.
+  
 
-	
+  
