@@ -123,8 +123,7 @@ terminate(Reason, State) ->
   report(1, "Downloader terminating", Reason),
   arya_token_storage:delete_pid(State#state.token),
   ok.
-  
-%%% @see Module:code_change/4 in gen_fsm(3).
+
 code_change(_, StateData, _) ->
   report(1, "Code changing in Downloader"),
   {ok, StateData}.

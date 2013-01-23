@@ -60,8 +60,7 @@ start_link( { MaxR, MaxT} ) ->
     ?MODULE, 
     { MaxR, MaxT}
   ).
-  
-%%% @see Module:init/1 in supervisor(3).
+
 init({ MaxR, MaxT} ) ->
   report(1, "Arya main supervisor initializing"),
   {ok, 
