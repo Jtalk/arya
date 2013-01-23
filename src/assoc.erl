@@ -22,7 +22,7 @@ empty() -> nil.
 %i returns {value,Value} if Value is associated with Key in Assoc.
 %i returns false otherwise.
 
-get(X, nil) -> false;
+get(_X, nil) -> false;
 get(X, T) -> acc23(T, X).
 
 % acc23({l, X, W}, X) -> 
@@ -90,7 +90,7 @@ get_max23({n3,_, _, _, _, T3}) ->get_max23(T3).
 %i An exception is generated if the Key is not found in Assoc.
 
 set(X, V, T0) ->
-  {W,T}=set23(T0, X, V).
+  {_W,_T}=set23(T0, X, V).
 
 set23({l,X,U}, X, V) ->
   {U,{l,X,V}}; 
@@ -115,7 +115,7 @@ set23({n3,T1,M1,T2,M2,T3}, X, V) when M2 =< X ->
 %i Key
 
 put(X, V, Tree0) ->
-  {Trees,Old}=insert23(Tree0, X, V),
+  {Trees,_Old}=insert23(Tree0, X, V),
   make_23tree(Trees).
 
 %i put_getoldval(Key, Value, Assoc)
@@ -189,7 +189,7 @@ combine_right2({t2,M2,T2,T3}, M1, T1) ->
 %i If the Key does not exist the function returns
 %i 'false'.
 
-delete(Key, nil) -> false;
+delete(_Key, nil) -> false;
 delete(Key, OldAssoc) ->  
     case delete23(OldAssoc, Key) of
   {false,_} -> false;
@@ -200,7 +200,7 @@ fix_root({n1,Tree})  ->  Tree;
 fix_root(Old)  -> Old.
 
 delete23({l,Key, V}, Key) -> {{value,V},nil};
-delete23({l,KeyOther, V}, Key) -> {false,{l,KeyOther,V}};
+delete23({l,KeyOther, V}, _Key) -> {false,{l,KeyOther,V}};
 delete23({n2,T1, M, T2}, Key) when M > Key ->
       {Value,NewT1} = delete23(T1, Key),
   {Value, merge_with_right_sibling(NewT1, T2, M)};
@@ -335,7 +335,7 @@ is_key(Key,Assoc) ->
 %i If no such key can be found, 'none' is returned.
 %i Complexity: O(lg n)
 
-get_previous(X, nil) ->
+get_previous(_X, nil) ->
   none;
 get_previous(X, T) ->
   acc_previous(T, X, nil).
@@ -363,7 +363,7 @@ acc_previous({n3,_,_,NLT,_,T3}, X, _) ->
 %i If no such key can be found, 'none' is returned
 %i Complexity: O(lg n)
 
-get_next(X, nil) ->
+get_next(_X, nil) ->
   none;
 get_next(X, T) ->
   acc_next(T, X, nil).
@@ -386,7 +386,7 @@ acc_next({n3,_,_,_,_,T3}, X, NGT) ->
 %i map(F,Assoc)
 %i maps the function F to all values in Assoc
 
-map(F,nil) ->
+map(_F,nil) ->
   nil;
 map(F,Assoc) ->
   map2(Assoc,F).
@@ -406,9 +406,9 @@ map2({n3,T1,M1,T2,M2,T3},F) ->
 
 %%fold_l({l,Key,Val},F,U) ->
 %%  F(Key,Val,U);
-fold_l({n2,T1,M1,T2},F,U) -> 
+fold_l({n2,T1,_M1,T2},F,U) -> 
   fold_l(T1,F,fold_l(T2,F,U));
-fold_l({n3,T1,M1,T2,M2,T3},F,U) ->
+fold_l({n3,T1,_M1,T2,_M2,T3},F,U) ->
   fold_l(T1,F,fold_l(T2,F,fold_l(T3,F,U))).
 
 %i fold_r(F,U,Assoc)
@@ -417,9 +417,9 @@ fold_l({n3,T1,M1,T2,M2,T3},F,U) ->
 
 %%fold_r({l,Key,Val},F,U) ->
 %%  F(Key,Val,U);
-fold_r({n2,T1,M1,T2},F,U) -> 
+fold_r({n2,T1,_M1,T2},F,U) -> 
   fold_r(T2,F,fold_r(T1,F,U));
-fold_r({n3,T1,M1,T2,M2,T3},F,U) ->
+fold_r({n3,T1,_M1,T2,_M2,T3},F,U) ->
   fold_r(T3,F,fold_r(T2,F,fold_r(T1,F,U))).
 
 % match(Assoc,Pattern)...
