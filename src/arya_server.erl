@@ -68,62 +68,59 @@ start_link(Args ) ->
 %%%
 %%% @doc Sends the message provided to the socket connected with the current gen_server.
 %%%
-send(Message) when is_record(Message, send) ->
+send(Message) ->
   gen_server:cast(?MODULE, Message ). 
   
+%% Callbacks:  
+
 init(_Args ) ->
   Port = getenv(dns_port, "Unable to read application setting dns_port"),
   DnsParams = getenv(dns_params, "Unable to read application setting dns_params"),
   {ok, _Socket} = gen_udp:open(Port, DnsParams).
   
-%%% @doc Termination callback.
 terminate(Reason, Socket ) ->
   report(1, "Terminating DNS server"), 
   report(2, "Reason", Reason),
   gen_udp:close(Socket). % closes the socket
   
-%%% @see Module:handle_info/2 in gen_server(3).
+%% Handles message from the port. Since server is in active mode, all the messages are 
+%% comming to the process as special Erlang messages.
 handle_info(Message, Socket) when is_record(Message, udp) ->
   report(1, "DNS packet received"),
   report(3, "Message", Message),
-  
-  {ok, Child } = arya_proc_sup:child(),
+  {ok, Child } = arya_proc_sup:child(), %% Making new worker for that packet.
   arya_processor:process(Child,  #recv {
-                    from = {Message#udp.address, Message#udp.port},
-                    data = Message#udp.data
-                  }
+      from = {Message#udp.address, Message#udp.port},
+      data = Message#udp.data
+    }
   ),
   {noreply, Socket};
+  
 handle_info(Data, State ) ->
   report(0, "Wrong info in DNS server",Data),
   {noreply, State }.
   
-%%% @see Module:handle_call/3 in gen_server(3).
 handle_call(Data, _, State) ->
   report(0, "Wrong call in DNS server",Data),
   {reply, unknown, State }.
 
-%%% @see Module:handle_cast/2 in gen_server(3).
+%% Sending message.
 handle_cast(Message , Socket) when is_record(Message, send) ->
   report(1, "DNS package sending"),
   report(3, "Package", Message),
-  
   {Address, Port} = Message#send.to, % getting dest addresss/port pair
   case gen_udp:send(Socket, Address, Port, Message#send.data) of
-  % sending a packet gotten
     ok ->
       {noreply, Socket};
     {error, Reason} ->
       {stop, Reason, Socket}
   end;
+  
 handle_cast(Data, State) ->
   report(0, "Wrong cast in DNS server",Data),
   {noreply, State }.
   
-%%% @see Module:code_change/3 in gen_server(3).
+%% Dummy
 code_change(_, State, _) ->
   report(1, "Code change in DNS server"),
   {ok, State }.
-  
-
-  
