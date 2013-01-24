@@ -1,0 +1,5 @@
+{application,arya}.
+{packages,[]}.
+{modules,[arya,arya_common,arya_decision,arya_dl,arya_dl_sup,arya_main_sup,
+          arya_parse,arya_proc_sup,arya_process,arya_processor,arya_server,
+          arya_token_storage,jdb]}.

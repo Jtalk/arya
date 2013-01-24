@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Module arya_common</title>
+<link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
+</head>
+<body bgcolor="white">
+<div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<hr>
+
+<h1>Module arya_common</h1>
+<ul class="index"><li><a href="#description">Description</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>This is the tier 1 and 2 Arya processors' special
+   subroutines.
+<p>Copyright © 2012-2013 Roman Nazarenko</p>
+
+<p><b>Authors:</b> Roman Nazarenko (<a href="mailto:me@jtalk.me"><tt>me@jtalk.me</tt></a>).</p>
+
+<h2><a name="description">Description</a></h2>This is the tier 1 and 2 Arya processors' special
+   subroutines.
+<h2><a name="index">Function Index</a></h2>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#address-1">address/1*</a></td><td>Returns remote host's address extracted from Data.</td></tr>
+<tr><td valign="top"><a href="#construct-2">construct/2*</a></td><td>Constructs a packet from the list provided.</td></tr>
+<tr><td valign="top"><a href="#decode-2">decode/2*</a></td><td>Decodes the binary given, tries to add N parts sequentially until
+   data becomes decodable, falls if not.</td></tr>
+<tr><td valign="top"><a href="#decrypt-1">decrypt/1*</a></td><td>Incoming message decryption (base64).</td></tr>
+<tr><td valign="top"><a href="#download-1">download/1</a></td><td>Perform all remote page downloading routines.</td></tr>
+<tr><td valign="top"><a href="#recv-2">recv/2*</a></td><td>Recursively receives messages until query's empty.</td></tr>
+<tr><td valign="top"><a href="#request-3">request/3</a></td><td>Makes HTTP request to the remote server specified.</td></tr>
+<tr><td valign="top"><a href="#send_back-2">send_back/2</a></td><td>Sends a message specified to the Address and Port using arya_server.</td></tr>
+<tr><td valign="top"><a href="#split-2">split/2*</a></td><td>Splits a packet to parts not greater than lenght specified.</td></tr>
+<tr><td valign="top"><a href="#split-3">split/3*</a></td><td>Just split/2 recursive worker (with accumulator).</td></tr>
+</table>
+
+<h2><a name="functions">Function Details</a></h2>
+
+<h3 class="function"><a name="address-1">address/1 *</a></h3>
+<div class="spec">
+<p><tt>address(Request) -&gt; any()</tt></p>
+</div><p>Returns remote host's address extracted from Data.
+   Looks kinda magic. In fact, just filters 'example.org' from the HTTP requrst.</p>
+
+<h3 class="function"><a name="construct-2">construct/2 *</a></h3>
+<div class="spec">
+<p><tt>construct(Rest, Ready) -&gt; any()</tt></p>
+</div><p>Constructs a packet from the list provided.</p>
+
+<h3 class="function"><a name="decode-2">decode/2 *</a></h3>
+<div class="spec">
+<p><tt>decode(Data, Num) -&gt; any()</tt></p>
+</div><p>Decodes the binary given, tries to add N parts sequentially until
+   data becomes decodable, falls if not.
+   Since there're some trouble transferring '=' via DNS queries, this
+   nail is the only way.</p>
+
+<h3 class="function"><a name="decrypt-1">decrypt/1 *</a></h3>
+<div class="spec">
+<p><tt>decrypt(Data) -&gt; any()</tt></p>
+</div><p>Incoming message decryption (base64).</p>
+
+<h3 class="function"><a name="download-1">download/1</a></h3>
+<div class="spec">
+<p><tt>download(State) -&gt; any()</tt></p>
+</div><p>Perform all remote page downloading routines.</p>
+
+<h3 class="function"><a name="recv-2">recv/2 *</a></h3>
+<div class="spec">
+<p><tt>recv(Socket, Data) -&gt; any()</tt></p>
+</div><p>Recursively receives messages until query's empty.</p>
+
+<h3 class="function"><a name="request-3">request/3</a></h3>
+<div class="spec">
+<p><tt>request(Address, Port, Data) -&gt; any()</tt></p>
+</div><p>Makes HTTP request to the remote server specified.</p>
+
+<h3 class="function"><a name="send_back-2">send_back/2</a></h3>
+<div class="spec">
+<p><tt>send_back(To, Packet) -&gt; ok</tt>
+<ul class="definitions"><li><tt>To = {Address, Port}</tt></li><li><tt>Address = <a href="inet.html#type-ip_address">inet:ip_address()</a> | <a href="inet.html#type-hostname">inet:hostname()</a></tt></li><li><tt>Port = <a href="inet.html#type-port_number">inet:port_number()</a></tt></li><li><tt>Packet = {id, ID} | binary()</tt></li><li><tt>ID = binary()</tt></li></ul></p>
+</div><p>Sends a message specified to the Address and Port using arya_server.
+  </p>
+
+<h3 class="function"><a name="split-2">split/2 *</a></h3>
+<div class="spec">
+<p><tt>split(Packet, MaxLen) -&gt; any()</tt></p>
+</div><p>Splits a packet to parts not greater than lenght specified.</p>
+
+<h3 class="function"><a name="split-3">split/3 *</a></h3>
+<div class="spec">
+<p><tt>split(Data, Len, Array) -&gt; any()</tt></p>
+</div><p>Just split/2 recursive worker (with accumulator).</p>
+<hr>
+
+<div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<p><i>Generated by EDoc, Jan 24 2013, 13:34:27.</i></p>
+</body>
+</html>
