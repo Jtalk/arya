@@ -21,6 +21,10 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc This is the Arya server storing PIDs for all the tokens 
+%% handling by Arya at the current moment. It describes callbacks
+%% for gen_server handling UDP socket for both incoming and 
+%% outcoming connections.
 
 -module(arya_token_storage).
 -behaviour(gen_server).
@@ -35,17 +39,10 @@
 %% Server queries:
 -export([ start_link/1, get_pid/1, add_pid/2, delete_pid/1]).
 
-%%% -------------------------------------------------------
-%%% This is the Arya server storing PIDs for all the tokens
-%%% handling by Arya in the current moment. It describes  
-%%% callbacks for gen_server handling UDP socket for both   
-%%% incoming and outcoming connections.
-%%% -------------------------------------------------------
 
 %% Starting:
 
-%%% @spec start_link(Args) -> Result
-%%%    Args = term(), ignored
+%%% @spec start_link(Args::term()) -> Result
 %%%    Result = {ok,Pid} | ignore | {error,Error}
 %%%     Pid = pid()
 %%%     Error = {already_started,Pid} | term()
@@ -92,23 +89,27 @@ delete_pid(Token ) ->
   Pid.
   
 %% Callbacks:
-
+%%% @private
+%%% @doc Makes empty array.
 init(_) ->
   report(1, "Token storage started"),
   {ok, assoc:empty()}.
   
+%%% @hidden
 terminate(Reason, _State ) ->
   report(1, "Token storage terminated"),
   report(2, "Reason", Reason),
   ok.
   
-%%% No info handled.
+%%% @hidden No info handled.
 handle_info(Data, State ) ->
   report(0, "Wrong info in Token storage", Data),
   {noreply, State }.
   
 %%% Storage handles all the requrests via synchronous calls.
 %% Calls:
+%% @doc Processes interface requests.
+%% @see gen_server:call/2
 handle_call({get, Token}, _, Storage) ->
   Ret = assoc:get(Token, Storage),
   case Ret of
@@ -135,14 +136,12 @@ handle_call(Data, _, State) ->
   {noreply, State}.
 
 %% Casts:
+%% @hidden
 handle_cast(Data, State) ->
   report(0, "Wrong cast in Token storage",Data),
   {noreply, State }.
   
-%% Just dummy code_change callback.
+%% @hidden Just dummy code_change callback.
 code_change(_, State, _) ->
   report(1, "Code change in Token storage"),
   {ok, State }.
-  
-
-  

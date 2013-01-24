@@ -21,6 +21,15 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc This is the downloaders' supervisor of Arya server. 
+%% It looks after an advanced workers processing previ-
+%% ously data before it become send to the client.
+%%
+%% For further information about downloader module see 
+%% arya_dl documentation.
+%%
+%% This modue describes callbacks for supervisor starting  
+%% and terminating as well as a worker adding method.
 
 -module(arya_dl_sup).
 -behaviour(supervisor).
@@ -34,26 +43,12 @@
 %% Callbacks:
 -export([init/1]).
 
-%%% -----------------------------------------------------
-%%% This is the downloaders' supervisor of Arya server. 
-%%% It looks after an advanced workers processing previ-
-%%% ously data before it become send to the client.
-%%%
-%%% For further information about downloader module see 
-%%% arya_dl documentation.
-%%%
-%%% This modue describes callbacks for supervisor starting  
-%%% and terminating as well as a worker adding method.
-%%% -----------------------------------------------------
-
 %%% @spec start_link(Timing) -> Result
 %%%    Timing = {MaxR, MaxT, Await} 
-%%%     MaxR = integer() > 0
-%%%     MaxT = integer() > 0
-%%%     Await = integer() >= 0 | infinity
+%%%     MaxR = integer() 
+%%%     MaxT = integer()
+%%%     Await = integer() | infinity
 %%%    Result = startlink_ret()
-%%%
-%%% For details about Timing and Result see supervisor(3).
 %%%
 %%% @doc Initializes Arya processors and handles them.
 %%%
@@ -65,6 +60,8 @@ start_link(Args) ->
     Args
   ).
   
+%%% @private
+%%% @doc Starting in one-for-one mode.
 init({MaxR, MaxT, Await}) ->
   report(1, "Downloader supervisor starting"),
   {ok, 
@@ -82,7 +79,7 @@ init({MaxR, MaxT, Await}) ->
 %%% @spec child(Token) -> {ok, pid()} | false
 %%%     Token = integer()
 %%%    
-%%%  @doc Starts new Arya downloader to process further messages.
+%%% @doc Starts new Arya downloader to process further messages.
 %%% It registers itself in arya_token_storage.
 %%%
 child(Token) ->

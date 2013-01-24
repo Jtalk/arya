@@ -21,6 +21,22 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc This is the tier 1 Arya processor. It receives a raw
+%% message from the supervisor (and supervisor receives
+%% it from the arya_server) and handles it.
+%%
+%% It recognizes the message received, divides it into 
+%% ID, flags, questions and so on, then sends all the 
+%% parts to the tier 2 processors (arya_dl), or just drop
+%% it, if the message is malformed.
+%%
+%% This modue describes callbacks for gen_server starting  
+%% and terminating as well as a workers' methods.
+%%
+%% Really, using gen_server is not required for this module,
+%% it's simple enough to be run as a single function, but
+%% gen_server allows us to use supervision and automated 
+%% process handling, so let it be.
 
 -module(arya_processor).
 -behaviour(gen_server).
@@ -38,24 +54,7 @@
 %% DNS header size.
 -define(HEADER_SIZE, 12).
 
-%%% -----------------------------------------------------
-%%% This is the tier 1 Arya processor. It receives a raw
-%%% message from the supervisor (and supervisor receives
-%%% it from the arya_server) and handles it.
-%%%
-%%% It recognizes the message received, divides it into 
-%%% ID, flags, questions and so on, then sends all the 
-%%% parts to the tier 2 processors (arya_dl), or just drop
-%%% it, if the message is malformed.
-%%%
-%%% This modue describes callbacks for gen_server starting  
-%%% and terminating as well as a workers' methods.
-%%%
-%%% Really, using gen_server is not required for this module,
-%%% it's simple enough to be run as a single function, but
-%%% gen_server allows us to use supervision and automated 
-%%% process handling, so let it be.
-%%% -----------------------------------------------------
+
 
 %%% @spec start_link() -> Result
 %%%    Result = {ok,Pid} | ignore | {error,Error}
@@ -67,22 +66,25 @@
 start_link() ->
   gen_server:start_link(arya_processor, [], []).
 
-%%% @spec process(Message) -> Result
+%%% @spec process(Pid, Message) -> Result
+%%%    Pid = pid()
 %%%    Message = record(recv)
 %%%    Result = {stop, Reason, null}
 %%%     Reason = normal | {error, Error}
 %%%      Error = term()
 %%%  
-%%% @doc Main parsing routine starter.
+%%% @doc Main parsing routine starter. Calls process/1 via 
+%%% handle_cast to perform asynchronous processing. Pid is
+%%% one associated with the client's tokem in token storage.
 %%%
 process(Pid, Message) when is_record(Message, recv) ->
   report(1, "Processing message", Pid),
   report(3, "Message", Message),
-  gen_server:cast(Pid, Message).
+  gen_server:cast(Pid, Message). % -> handle_cast -> process/1.
   
 %% Routines:
   
-%% Main parsing routine of the processor.
+%% @doc Main parsing routine of the processor. Parses and handles packet.
 process(Message)  ->
   try
     {ok, Parsed} = arya_parse:parse(Message), % we got the url array too
@@ -98,11 +100,13 @@ process(Message)  ->
   
 %% Callbacks:
 
+%% @doc Initializes random generator.
 init(_) ->
   random:seed(now()),
   report(1, "Processor starting"),
   {ok, null}.
   
+%% @hidden
 handle_cast(Message, _) when is_record(Message, recv) ->
   process(Message),
   {stop, normal, null};
@@ -111,19 +115,23 @@ handle_cast(Data, State) ->
   report(0, "Wrong cast in Processor", Data),
   {noreply, State}.
 
+%% @hidden
 handle_call(Data, _, State) ->
   report(0, "Wrong sync event in Processor",Data),
   {reply, ok, State}.
 
+%% @hidden
 handle_info(Data, State) ->
   report(0, "Wrong info in Processor",Data),
   {noreply, State}.
   
+%% @hidden
 terminate(Reason, _) ->
   report(1, "Terminating Processor"), 
   report(2, "Reason", Reason),
   ok.
 
+%% @hidden
 code_change(_, StateData, _) ->
   report(1, "Code changing in Processor"),
   {ok, StateData}.

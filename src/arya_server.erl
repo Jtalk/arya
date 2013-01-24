@@ -21,6 +21,8 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc This is the main Arya server module describes callbacks for 
+%% gen_server handling UDP socket for both incoming and outcoming connections.
 
 -module(arya_server).
 -behaviour(gen_server).
@@ -35,20 +37,17 @@
 %% Working with the server (starting and sending):
 -export([ start_link/1, send/1]).
 
-%%% ---------------------------------------------------------
-%%% This is the main Arya server module describes callbacks 
-%%% for gen_server handling UDP socket for both incoming and 
-%%% outcoming connections.
-%%% ---------------------------------------------------------
 
 %%% @spec start_link(Args) -> Result
-%%%    Args = term(), ignored
+%%%    Args = term()
 %%%    Result = {ok,Pid} | ignore | {error,Error}
 %%%     Pid = pid()
 %%%     Error = {already_started,Pid} | term()
 %%%
-%%% @doc Starts the Arya UDP server.
-%%% For now server starts in active mode.
+%%% @doc Starts the Arya UDP server. Args are ignored.
+%%% For now server starts in active mode. That means, process
+%%% will receive all the packets as Erlang messages, without 
+%%% explicit recv/2 using.
 %%%
 start_link(Args) ->
   report(1, "Starting DNS server"),
@@ -72,18 +71,19 @@ send(Message) ->
   gen_server:cast(?MODULE, Message). 
   
 %% Callbacks:  
-
+%% @doc Configures and opens a port and stores it as gen_server internal state.
 init(_Args) ->
   Port = getenv(dns_port, "Unable to read application setting dns_port"),
   DnsParams = getenv(dns_params, "Unable to read application setting dns_params"),
   {ok, _Socket} = gen_udp:open(Port, DnsParams).
   
+%% @doc closes port at gen_server shutdown.
 terminate(Reason, Socket) ->
   report(1, "Terminating DNS server"), 
   report(2, "Reason", Reason),
   gen_udp:close(Socket). % closes the socket
   
-%% Handles message from the port. Since server is in active mode, all the messages are 
+%% @doc Handles message from the port. Since server is in active mode, all the messages are 
 %% comming to the process as special Erlang messages.
 handle_info(Message, Socket) when is_record(Message, udp) ->
   report(1, "DNS packet received"),
@@ -100,11 +100,12 @@ handle_info(Data, State ) ->
   report(0, "Wrong info in DNS server",Data),
   {noreply, State }.
   
+%% @hidden
 handle_call(Data, _, State) ->
   report(0, "Wrong call in DNS server",Data),
   {reply, unknown, State }.
 
-%% Sending message.
+%% @doc Sends message to the socket associated.
 handle_cast(Message , Socket) when is_record(Message, send) ->
   report(1, "DNS package sending"),
   report(3, "Package", Message),
@@ -120,7 +121,7 @@ handle_cast(Data, State) ->
   report(0, "Wrong cast in DNS server",Data),
   {noreply, State }.
   
-%% Dummy
+%% @hidden Dummy
 code_change(_, State, _) ->
   report(1, "Code change in DNS server"),
   {ok, State }.

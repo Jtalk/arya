@@ -21,6 +21,8 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc This is the main Arya module describes callbacks for
+%% application starting and terminating.
 
 -module(arya).
 -behaviour(application).
@@ -31,17 +33,10 @@
 %% Callbacks:
 -export([ start/2, stop/1]).
 
-%%% -----------------------------------------------------
-%%% This is the main Arya module describes callbacks for
-%%% application starting and terminating.
-%%% -----------------------------------------------------
-
-%%% @spec start( Type, Timing) -> Result
-%%%     Type = term(), ignored
-%%%     Timing = { MaxR, MaxT } 
+%%% @spec start(Type, Timing) -> Result
+%%%     Type = term()
+%%%     Timing = { MaxR :: integer(), MaxT :: integer() } 
 %%%     Result = startlink_ret()
-%%%
-%%% For details about Timing and Result see supervisor(3).
 %%%
 %%% @doc Starts the Arya application with the supervision timings provided
 %%%
@@ -57,8 +52,8 @@ start( _, Timing ) ->
     Ret
   end.
  
-%%% @spec stop( Reason ) -> Result
-%%%     Reason = term(), ignored
+%%% @spec stop(Reason) -> Result
+%%%     Reason = term()
 %%%     Result = ok | {error, Reason}
 %%%     Reason = term()
 %%%

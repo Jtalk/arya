@@ -19,9 +19,6 @@
 %%  Author: Nazarenko Roman <mailto: me@jtalk.me>
 %%  License: <http://www.gnu.org/licenses/gpl.html>
 
-%% @author Roman Nazarenko <me@jtalk.me>
-%% @copyright 2012-2013 Roman Nazarenko
-
 -import(jdb, [report/3, report/2, appenv/3, getenv/2]).
 
 %% DNS Protocol entry types.
@@ -34,8 +31,8 @@
 %%% and port and the raw data of the incoming message.
 -record( recv, 
     { 
-      from, % = { address, port}
-      data  % = binary()
+      from :: {inet:ip_address(), inet:port_number()},
+      data :: binary()
     }
   ).
     
@@ -63,12 +60,12 @@
 %%% question in binary form and an array of binary urls.
 -record( entry, 
     {
-      from,  % = { address, port}
-      id,    % = binary()
-      flags,  % = binary()
-      type,   % = integer() >= 0
-      question,% = binary()
-      url    % = [ binary()]
+      from     :: {inet:ip_address(), inet:port_number()},
+      id       :: binary(), 
+      flags    :: binary(), 
+      type     :: integer(), 
+      question :: binary(),
+      url      :: [binary()]
     }
   ).
     
@@ -78,11 +75,11 @@
 %%% loaded content in binary form.
 -record( state, 
     {
-      address,    % = { address, port}
-      token,    % = binary()
-      url_len = 0,  % = integer() >= 0
-      url = [],  % = [ { integer() >= 0, binary()} ] - size and binary representation
-      data_len = 0,% = integer(), data length
-      data     % = [{ integer() >= 0, binary()}]
+      address      :: {inet:ip_address(), inet:port_number()}, 
+      token        :: binary(),
+      url_len = 0  :: integer(),
+      url = []     :: [{integer(), binary()}], % - size and binary representation
+      data_len = 0 :: integer(),
+      data         :: [{integer(), binary()}]
     }
   ).

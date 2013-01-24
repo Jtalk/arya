@@ -1,6 +1,6 @@
 % Dan Sahlin <dan@cslab.ericsson>, Ericsson Telecom, 1997-08-07
 % version 1.2
-
+% @hidden
 -module(assoc).
 -export([empty/0,get/2, get_min/1, get_max/1, 
   set/3, put/3, put_getoldval/3, delete/2, delete_min/1, delete_max/1,

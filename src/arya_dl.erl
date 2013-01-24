@@ -21,6 +21,22 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc This is the tier 2 Arya processor (downloader). It 
+%% receives pre-processed messages from the supervisor
+%% (implicitly from the Arya processor) and handles it.
+%%
+%% It recognizes the message received and adds it's con-
+%% tent to the internal fsm state. When all the messages
+%% are in, it downloads the page requested and gets ready
+%% to send it back.
+%%
+%% This modue describes callbacks for gen_fsm starting  
+%% and terminating as well as a workers' methods.
+%%
+%% Really, using gen_fsm is not required for this module,
+%% it's simple enough to be run as a single function, but
+%% gen_fsm allows us to use supervision and automated 
+%% process handling, so let it be.
 
 -module(arya_dl).
 -behaviour(gen_server).
@@ -34,27 +50,8 @@
 -export([ handle_call/3, handle_info/2, handle_cast/2]).
 -export([ code_change/3]).
 
-%%% -----------------------------------------------------
-%%% This is the tier 2 Arya processor (downloader). It 
-%%% receives pre-processed messages from the supervisor
-%%% (implicitly from the Arya processor) and handles it.
-%%%
-%%% It recognizes the message received and adds it's con-
-%%% tent to the internal fsm state. When all the messages
-%%% are in, it downloads the page requested and gets ready
-%%% to send it back.
-%%%
-%%% This modue describes callbacks for gen_fsm starting  
-%%% and terminating as well as a workers' methods.
-%%%
-%%% Really, using gen_fsm is not required for this module,
-%%% it's simple enough to be run as a single function, but
-%%% gen_fsm allows us to use supervision and automated 
-%%% process handling, so let it be.
-%%% -----------------------------------------------------
-
 %%% @spec start_link(Token) -> Result
-%%%    Token = integer() > 0
+%%%    Token = integer() 
 %%%    Result = {ok,Pid} | ignore | {error,Error}
 %%%     Pid = pid()
 %%%     Error = {already_started,Pid} | term()
@@ -64,24 +61,27 @@
 start_link(Token) ->
   gen_server:start_link(arya_dl, Token, []).  
 
-%% Callbacks
+%% Callbacks:
 
+%%% @private
+%%% @doc Initializes random generator.
 init(Token ) ->
   random:seed(now()),
   report(1, "Starting Downloader"),
   report(2, "Downloader token", Token),
   {ok, #state{token = Token } }.
   
-%% Make processor handle that data.
+%%% @doc Make arya_dl to handle that data.
 process(Pid, Data) ->
   gen_server:call(Pid, Data).
 
-%% Make processor download.
+%%% @doc Make arya_dl to download requested page.
 download(Pid) ->
   gen_server:cast(Pid, download).
   
 %% Casts:
-%% @TODO: Rewrite state record to make it's purposes clearer.
+%%% @doc Async requested page downloading.
+%%% @TODO: Rewrite state record to make it's purposes clearer.
 handle_cast(download, State) ->
   report(1, "Downloader received cast for page download"),
   report(3, "Downloader state", State),
@@ -104,6 +104,8 @@ handle_cast(Data, State) ->
   {noreply, State}.
 
 %% Calls:
+%%% @private
+%%% @doc Just route data to arya_process:process/2.
 handle_call(Data, _, State) when is_record(Data, entry) ->
   arya_process:process(Data, State);
   
@@ -113,17 +115,21 @@ handle_call(Data, _, State) ->
   report(3, "Downloader state", State),
   {reply, ok, State}.
 
+%%% @hidden
 handle_info(Data, State) ->
   report(0, "Wrong info in Downloader"),
   report(3, "Downloader data", Data),
   report(3, "Downloader state", State),
   {noreply, State}.
   
+%%% @private
+%%% @doc Deletes self PID from storage.
 terminate(Reason, State) ->
   report(1, "Downloader terminating", Reason),
   arya_token_storage:delete_pid(State#state.token),
   ok.
 
+%%% @hidden
 code_change(_, StateData, _) ->
   report(1, "Code changing in Downloader"),
   {ok, StateData}.

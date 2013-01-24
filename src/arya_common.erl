@@ -21,6 +21,8 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc This is the tier 1 and 2 Arya processors' special 
+%%  subroutines. 
 
 -module(arya_common).
 -include("arya_types.hrl").
@@ -45,11 +47,6 @@
 -export([download/1, send_back/2]).
 -export([request/3]).
 
-%%% -----------------------------------------------------------------------
-%%% This is the tier 1 and 2 Arya processors' special 
-%%%  subroutines. 
-%%% -----------------------------------------------------------------------
-
 %%% @spec send_back(To, Packet) -> ok
 %%%   To = {Address, Port}
 %%%     Address = inet:ip_address() | inet:hostname()
@@ -70,7 +67,7 @@ send_back(To, Packet) -> %% Packet is already formed there.
 
 %% Helpers: 
 
-%%% Perform all remote page downloading routines.
+%%% @doc Perform all remote page downloading routines.
 download(State) when is_record(State, state) ->
   Data = construct(State#state.url, <<>>),
   {ok, PureRequest} = decrypt(Data),
@@ -78,21 +75,21 @@ download(State) when is_record(State, state) ->
   {ok, Packet} = request(Address, ?PORT, PureRequest),
   {_Parts, _Len} = split(Packet, ?RESPONSE_LEN).
   
-%%% Constructs a packet from the list provided.
-%% @TODO: Rewrite with foldl.
+%%% @doc Constructs a packet from the list provided.
+%%% @TODO: Rewrite with foldl.
 construct([], Ready) ->
   Ready;
 construct([ {_, Part} | Rest], Ready) ->
   New = << Ready/binary, Part/binary >>,
   construct(Rest, New).
   
-%%% Incoming message decryption.
+%%% @doc Incoming message decryption (base64).
 decrypt(Data ) ->
   Replaced1 = binary:replace(Data, << $- >>, << $+ >>), % Those replaces for base64-web encoding.
   Replaced2 = binary:replace(Replaced1, << $_ >>, << $/ >>),
   {ok, decode(Replaced2, 3)}.
   
-%%% Decodes the binary given, tries to add N parts sequentially until 
+%%% @doc Decodes the binary given, tries to add N parts sequentially until 
 %%% data becomes decodable, falls if not.
 %%% Since there're some trouble transferring '=' via DNS queries, this
 %%% nail is the only way.
@@ -106,7 +103,7 @@ decode(Data, Num) ->
       decode(<< Data/binary, $= >>, Num-1)
   end.
   
-%%% Returns remote host's address extracted from Data.
+%%% @doc Returns remote host's address extracted from Data.
 %%% Looks kinda magic. In fact, just filters 'example.org' from the HTTP requrst.
 address(Request) -> % needs future research whether it even works.
   Lower = string:to_lower(Request),
@@ -125,13 +122,13 @@ address(Request) -> % needs future research whether it even works.
     end,
   {ok, string:strip(WithBlanks)}.
   
-%%% Makes a request to the remote server specified.
+%%% @doc Makes HTTP request to the remote server specified.
 request(Address, Port, Data ) ->
   {ok, Socket} = gen_tcp:connect(Address, Port, [ {active, false}, binary ]),
   ok = gen_tcp:send(Socket, Data),
   {ok, _Packet} = recv(Socket, <<>>).
   
-%%% Recursively receives messages until query's empty.
+%%% @doc Recursively receives messages until query's empty.
 recv(Socket, Data) ->
   {ok, Timeout} = application:get_env(timeout),
   case gen_tcp:recv(Socket, 0, Timeout) of 
@@ -142,12 +139,14 @@ recv(Socket, Data) ->
       {ok, Data}
   end.
   
-%%% Splits a packet to parts not greater than lenght specified.
+%%% @doc Splits a packet to parts not greater than lenght specified.
 %%% @TODO: Try to use folding here.
 split(Packet, MaxLen) when is_binary(Packet), is_integer(MaxLen) ->
   {Parts, Len} = split(Packet, MaxLen, []),
   %% format("PARTS: ", Parts),
   {lists:reverse(Parts), Len}.
+
+%%% @doc Just split/2 recursive worker (with accumulator).
 split(<<>>, _Len, Array) ->
   {Array, length(Array)};
 split(Data, Len, Array) ->

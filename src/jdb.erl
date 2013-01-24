@@ -21,15 +21,12 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc JDB is a debug module with debug leveling support. It uses 
+%% standard Erlang error_logger module, supports both tty and file output.
 
 -module(jdb).
 
 -export([appenv/3, getenv/2, report/2, report/3, configure/0]).
-
-%%% ------------------------------------------------------------------------
-%%% This is the debug module with debug leveling support. It uses standard
-%%% Erlang error_logger module, supports both tty and file output.
-%%% ------------------------------------------------------------------------
 
 %%% @spec appenv(Name, Function, ErrorMessage) -> term() | undefined
 %%%     Name = atom()
@@ -49,7 +46,7 @@ appenv(Name, Function, ErrorMessage) ->
       Error
   end.
   
-%%% @spec getenv(Name, ErrorMessage) -> -> term() | undefined
+%%% @spec getenv(Name, ErrorMessage) -> term() | undefined
 %%%     Name = atom()
 %%%     ErrorMessage = string()
 %%%  

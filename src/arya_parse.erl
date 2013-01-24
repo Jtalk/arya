@@ -21,6 +21,7 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc This is Arya raw DNS messages parsing routines module.
 
 -module(arya_parse).
 -include("arya_types.hrl").
@@ -28,10 +29,6 @@
 
 %% Dns header size.
 -define(HEADER_SIZE, 12).
-
-%%%-----------------------------------------------------------------
-%%% This is Arya raw DNS messages parsing routines module.
-%%%-----------------------------------------------------------------
 
 %%% @spec parse(Data) -> Result
 %%%    Data = record(recv)
@@ -69,7 +66,7 @@ parse(Data) when is_record(Data, recv) ->
   },
   report(3, "Parsing entry", Entry).
 
-%%% Converts a binary question to a list of binary parts.
+%%% @doc Converts a binary question to a list of binary parts.
 parse_question(Question ) ->
   BinUrl = binary:part(Question, 0, byte_size(Question)-4 ),
   Type = binary:decode_unsigned(
@@ -77,7 +74,7 @@ parse_question(Question ) ->
   Url = parse_url(BinUrl, []),
   report(2, "Question parsed", {ok, Url, Type }).
   
-%%% Recursive url parsing routine.
+%%% @doc Recursive url parsing routine.
 parse_url(Url, List) ->
   Len = binary:at(Url, 0),
   if 

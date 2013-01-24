@@ -21,6 +21,7 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc Packets decisioning routines.
 
 -module(arya_decision).
 -include("arya_types.hrl").
@@ -63,7 +64,8 @@ postprocess(Data) when is_record(Data, entry) ->
       decision(Token, Data#entry{url = Rest})
   end.
 
-%%% Puts a valid packet received to the downloader already run.
+%%% @spec decision(Token, Data) -> DNS_packet :: binary()
+%%% @doc Puts a valid packet received to the downloader already run.
 %%% @TODO: split into smaller functions.
 decision(Token, Data) ->
   report(1, "Starting making a decision"),
@@ -123,7 +125,7 @@ decision(Token, Data) ->
       )
   end.
         
-%%% Creates a new binary token from the uid and pass presented. 
+%%% @doc Creates a new binary token from the uid and pass presented. 
 %%% Really just returns a random value now.
 make_token(_Uid, _Pass) -> 
   random:seed(now()),
@@ -133,7 +135,7 @@ make_token(_Uid, _Pass) ->
   report(2, "Token value", InToken),
   binary:list_to_bin(io_lib:format("~p", [InToken])).
   
-%%% Creates DNS packet from data specified.
+%%% @doc Creates DNS packet from data specified.
 make_dns(Data, String) -> 
   report(1, "Making DNS packet"),
   report(2, "Return data", String),
@@ -146,12 +148,14 @@ make_dns(Data, String) ->
   report(2, "DNS Packet", Packet),
   Packet.
   
-%%% Converts need array to binary representation.
+%%% @doc Converts need array to binary representation.
 need_to_bin(Need) ->
   Bin = need_to_bin(Need, <<>> ), 
   report(2, "Binary need", Bin),
   Bin.
 %% @TODO: Folding?
+%% @private
+%% @doc Recursive need_to_bin worker.
 need_to_bin([], <<>>) ->
   <<>>;
 need_to_bin([], Bin) ->

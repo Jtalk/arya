@@ -21,6 +21,18 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc This is the main supervisor of Arya server. It looks 
+%% after all the major parts of the server:
+%%   arya_server,
+%%    arya_token_storage,
+%%    arya_proc_sup, 
+%%    arya_dl_sup.
+%%
+%% For further information about this modules see their 
+%% documentation.
+%%
+%% This modue describes callbacks for supervisor starting  
+%% and terminating.
 
 -module(arya_main_sup).
 -behaviour(supervisor).
@@ -31,26 +43,10 @@
 %% Callback and start function 
 -export( [ start_link/1, init/1]).
 
-%%% -----------------------------------------------------
-%%% This is the main supervisor of Arya server. It looks 
-%%% after all the major parts of the server:
-%%%   arya_server,
-%%%    arya_token_storage,
-%%%    arya_proc_sup, 
-%%%    arya_dl_sup.
-%%%
-%%% For further information about this modules see their 
-%%% documentation.
-%%%
-%%% This modue describes callbacks for supervisor starting  
-%%% and terminating.
-%%% -----------------------------------------------------
 
-%%% @spec start_link( Timing) -> Result
+%%% @spec start_link(Timing) -> Result
 %%%    Timing = { MaxR, MaxT } 
 %%%    Result = startlink_ret()
-%%%
-%%%  For details about Timing and Result see supervisor(3).
 %%%
 %%% @doc Initializes Arya major modules with the supervision timings provided
 %%%
@@ -61,6 +57,8 @@ start_link( { MaxR, MaxT} ) ->
     { MaxR, MaxT}
   ).
 
+%%% @private
+%%% @doc Starts all the supervisors, token storage and UDP server.
 init({ MaxR, MaxT} ) ->
   report(1, "Arya main supervisor initializing"),
   {ok, 

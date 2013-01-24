@@ -21,6 +21,17 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc This is the processors' supervisor of Arya server. 
+%% It looks after an essential workers processing all
+%% the incoming data before it sends to the downloader
+%% process (or just dropped, if data is malformed).
+%%
+%% For further information about processor module see its 
+%% documentation.
+%%
+%% This modue describes callbacks for supervisor starting  
+%% and terminating as well as a worker adding method.
+
 
 -module(arya_proc_sup).
 -behaviour(supervisor).
@@ -35,35 +46,20 @@
 %% Callbacks:
 -export([ init/1]).
 
-%%% -----------------------------------------------------
-%%% This is the processors' supervisor of Arya server. 
-%%% It looks after an essential workers processing all
-%%% the incoming data before it sends to the downloader
-%%% process (or just dropped, if data is malformed).
-%%%
-%%% For further information about processor module see its 
-%%% documentation.
-%%%
-%%% This modue describes callbacks for supervisor starting  
-%%% and terminating as well as a worker adding method.
-%%% -----------------------------------------------------
-
 %%% @spec child() -> {ok, child()} | {error, term()}
 %%%    
-%%%  @doc Starts new Arya processor and returns its PID.
+%%% @doc Starts new Arya processor and returns its PID.
 %%%
 child() ->
   report( 1, "Child creating in Process supervisor"),
   supervisor:start_child( ?MODULE, []).
-  
+
 %%% @spec start_link( Timing) -> Result
 %%%    Timing = { MaxR, MaxT, Await} 
-%%%     MaxR = integer() > 0
-%%%     MaxT = integer() > 0
-%%%     Await = integer() >= 0 | infinity
+%%%     MaxR = integer() 
+%%%     MaxT = integer() 
+%%%     Await = integer() | infinity
 %%%    Result = startlink_ret()
-%%%
-%%%  For details about Timing and Result see supervisor(3).
 %%%
 %%% @doc Initializes Arya processors and handles them.
 %%%
@@ -76,7 +72,9 @@ start_link( { MaxR, MaxT, Await} ) ->
   ).
 
 %% Callbacks:
-
+%%% @private
+%%% @doc Starts simple one-for-one supervisor, producing arya_processor modules.
+%%%
 init( { MaxR, MaxT, Await} ) ->
   report( 1, "Process supervisor starting"),
   { ok, 

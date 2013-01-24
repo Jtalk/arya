@@ -21,6 +21,11 @@
 
 %% @author Roman Nazarenko <me@jtalk.me>
 %% @copyright 2012-2013 Roman Nazarenko
+%% @doc This is module for one large process/2 function and 
+%% helpers. It's a high-level routine for message parts handling: 
+%% merging messages and finding out when that message (with HTTP request)
+%% is ready to be sent to the remove server.
+%% @headerfile "arya_types.hrl"
 
 -module(arya_process).
 -include("arya_types.hrl").
@@ -29,23 +34,18 @@
 
 -define(DONE, <<"done">> ).
 
-%%% -----------------------------------------------------
-%%% This is module for one large process/2 function and 
-%%% helpers. It's a high-level routine, it calls 
-%%% -----------------------------------------------------
-
 %%% @spec process(Data, State) -> Reply
-%%%    Data = record(entry)
-%%%    State = record(state)
+%%%    Data = entry()
+%%%    State = state()
 %%%    Reply = {reply, Message, NewState}
-%%%     Message =   last 
+%%%     Message = last 
 %%%          | ok 
 %%%          | {need, Need} 
 %%%          | {ready, Num}
 %%%          | {recv, Part}
 %%%          | {fail, Reason}
-%%%      Need = [ integer()>0 ]
-%%%      Num = integer() > 0
+%%%      Need = [ integer() ]
+%%%      Num = integer() 
 %%%      Part = binary()
 %%%      Reason = term()
 %%%
@@ -162,9 +162,12 @@ process(Data, State) ->
   report(0, "Wrong data is received in Downloader"),
   {reply, {fail, {unauthorized, Data, State}}, State}.
   
-%%% Generates a list of lost packets.
+%%% @doc Generates list of lost packets. It sorts packet by its indicies,
+%%% then looks for lost ones, returning them as a list of integers.
 need(Url) ->
   report(2, "Sorted need", need(lists:usort(fun compare/2, Url), [], -1)).
+%%% @hidden
+%%% @doc Really need routine with accumulator etc.
 need([], List, _Prev) ->
   report(2, "Need is", List),
   List;
@@ -177,7 +180,7 @@ need([ {Index, _} | Rest], List, Prev) ->
     end,
   need(Rest, NewList, Index).
   
-%%% Gets a data from a packet and looks whether this packet is last
+%%% @doc Extracts data from a packet and looks whether this packet is last
 part(Raw, ActualLen, NeededLen) ->
    [ BinIndex, Data | _] = Raw#entry.url,
    Ret = if ActualLen+1 >= NeededLen ->
@@ -188,7 +191,7 @@ part(Raw, ActualLen, NeededLen) ->
   {Index, _} = string:to_integer(binary:bin_to_list(BinIndex)),
   {Ret, {Index, Data}}.
 
-%%% Comparsion routine for usort.
+%%% @doc Comparsion routine for usort.
 compare({Index1, _}, {Index2, _}) when Index1 > Index2 ->
   false;
 compare({_Index1, _}, {_Index2, _}) ->
